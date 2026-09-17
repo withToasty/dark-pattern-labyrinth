@@ -1,0 +1,27 @@
+/* Final realism / editorial pass */
+.immersive .portal-wrap>h2{font-size:27px;line-height:1.35;margin:0 0 18px;padding-bottom:13px;border-bottom:2px solid #d9e1e8;color:#172c3f}
+.immersive .portal-wrap>p{max-width:720px}
+.immersive .portal-wrap>.btn{width:100%;max-width:560px;margin:10px 0}
+.immersive .grid .btn{max-width:none}
+.immersive .tiny{font-size:12px;line-height:1.6;text-align:left;margin:14px 0;max-width:560px;color:#687887}
+.immersive .sneaky{opacity:.58}
+.form-kicker{font-size:11px;font-weight:800;letter-spacing:.08em;color:#647586;margin-bottom:8px}
+.registration-panel{max-width:560px;padding:18px;margin:18px 0;background:#f7f9fb;border:1px solid #d7dfe6}
+.real-list{max-width:760px;border-top:1px solid #d2dae2;border-left:1px solid #d2dae2;margin:18px 0}
+.real-list a{position:relative;display:block;padding:15px 38px 15px 15px;border-right:1px solid #d2dae2;border-bottom:1px solid #d2dae2;text-decoration:none;color:#233b50;background:#fff}
+.real-list a:after{content:'›';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:22px;color:#6e8191}
+.real-list strong{display:block;font-size:14px;margin-bottom:4px}.real-list span{display:block;font-size:11px;line-height:1.55;color:#6c7985}
+.detail-card{max-width:650px;padding:0!important;overflow:hidden}
+.detail-card>div{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:13px 15px;border-bottom:1px solid #e1e6eb}
+.detail-card>div:last-child{border-bottom:0}.detail-card span{font-size:12px;color:#687783}.detail-card strong{font-size:13px;color:#263b4f}
+.notice-box{max-width:650px;margin:15px 0;padding:13px 15px;background:#f6f8fa;border-left:4px solid #8395a6;color:#4b5d6e;font-size:12px;line-height:1.65}
+.status-success{max-width:650px;margin:0 0 15px;padding:11px 14px;background:#edf7f1;border:1px solid #b9dbc5;color:#17623b;font-size:12px;font-weight:800}
+.immersive .escape-zone{max-width:650px;height:210px;border-style:solid}
+.immersive .runner{box-shadow:0 2px 7px rgba(0,0,0,.12)}
+.immersive .xbright{background:#eef1f4;color:#52606d;border:1px solid #cbd4dc}
+@media(max-width:780px){
+  .immersive .portal-wrap>h2{font-size:23px}
+  .detail-card>div{grid-template-columns:1fr;gap:3px}
+  .immersive .portal-wrap>.btn{max-width:none}
+  .immersive .tiny{max-width:none}
+}
