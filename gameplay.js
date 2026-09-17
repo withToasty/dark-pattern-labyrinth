@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     end.querySelector('.result-panel')?.remove();
     const panel=document.createElement('div');panel.className='result-panel';
     panel.innerHTML=`<div class="result-label">CANCELLATION RESULT</div><div class="result-time">${fmt(state.end-state.start)}</div><div class="result-grid"><div class="result-stat"><strong>${state.views}</strong><span>開いたページ</span></div><div class="result-stat"><strong>${state.revisits}</strong><span>同じページに戻った回数</span></div><div class="result-stat"><strong>${state.traps}</strong><span>罠に触れた回数</span></div><div class="result-stat"><strong>${state.seen.size}</strong><span>異なる画面</span></div></div><div class="result-score"><span>DARK PATTERN<br>RESISTANCE</span><b>${resistance()}%</b></div><div class="result-note">※ゲーム内での行動から算出した参考スコアです。知識や能力を評価するものではありません。</div>`;
-    const marker=end.querySelector('.good');marker?.after(panel);
+    const marker=end.querySelector('.good');marker?.after(panel);window.dispatchEvent(new CustomEvent('dp:finished',{detail:{timeMs:Math.round(state.end-state.start),views:state.views,revisits:state.revisits,traps:state.traps,seen:state.seen.size}}));
   };
 
   document.querySelector('#start a[href="#home"]')?.addEventListener('click',start);
