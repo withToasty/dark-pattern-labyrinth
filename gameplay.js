@@ -45,4 +45,53 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   const contract=document.getElementById('contract');
   if(contract){const a=contract.querySelector('a[href="#other"]');if(a){a.classList.remove('sneaky');a.classList.add('hidden-inline');a.textContent='プラン変更以外のお手続きはこちら';}}
+
+  // Remove game-like progress/step counters and make the flow look like a normal service website.
+  const applydoor=document.getElementById('applydoor');
+  if(applydoor){
+    const wrap=applydoor.querySelector('.portal-wrap')||applydoor;
+    wrap.querySelectorAll('.sub').forEach(el=>{if(/YOU FOUND IT|STEP|進捗/i.test(el.textContent))el.remove();});
+    wrap.querySelectorAll('.card').forEach(card=>{if(/あと\s*\d+\s*STEP/i.test(card.textContent))card.remove();});
+    const h=wrap.querySelector('h2');if(h)h.textContent='解約申請';
+    const p=wrap.querySelector('p');if(p)p.textContent='申請前に、契約内容と注意事項をご確認ください。';
+  }
+
+  ['boss3','boss4','boss5','boss6','boss7','boss8','chat3','boss9','boss10'].forEach(id=>{
+    const section=document.getElementById(id);if(!section)return;
+    const wrap=section.querySelector('.portal-wrap')||section;
+    wrap.querySelectorAll('.sub').forEach(el=>{if(/STEP\s*\d+\s*\/\s*\d+|進捗状況|追加本人確認が必要です/i.test(el.textContent))el.remove();});
+    wrap.querySelectorAll('.progress').forEach(el=>el.remove());
+    wrap.querySelectorAll('.center').forEach(el=>{if(/\d+%\s*完了/.test(el.textContent))el.remove();});
+    wrap.querySelectorAll('.card').forEach(card=>{if(/あと\s*\d+\s*STEP/i.test(card.textContent))card.remove();});
+  });
+  const boss3=document.getElementById('boss3');if(boss3){const h=boss3.querySelector('h2');if(h)h.textContent='解約内容の確認';}
+  const boss4=document.getElementById('boss4');if(boss4){const h=boss4.querySelector('h2');if(h)h.textContent='追加確認';const p=boss4.querySelector('p');if(p)p.textContent='手続きを続けるには、追加の確認が必要です。';}
+  document.querySelectorAll('#trueend .node').forEach(node=>{if(/Fake Progress/i.test(node.textContent))node.remove();});
+
+  // A genuinely evasive cancel button: fast, random movement with visible darts.
+  const runner=document.querySelector('#boss6 .runner');
+  const zone=document.querySelector('#boss6 .escape-zone');
+  if(runner&&zone){
+    runner.style.animation='none';
+    runner.style.transition='left .11s linear, top .11s linear';
+    runner.style.willChange='left,top';
+    let touchDodges=0;
+    const moveRunner=()=>{
+      if(idFromHash()!=='boss6')return;
+      const zw=zone.clientWidth,zh=zone.clientHeight,rw=runner.offsetWidth,rh=runner.offsetHeight;
+      if(!zw||!zh)return;
+      const pad=8;
+      const maxX=Math.max(pad,zw-rw-pad);
+      const maxY=Math.max(pad,zh-rh-pad);
+      runner.style.left=`${pad+Math.random()*Math.max(0,maxX-pad)}px`;
+      runner.style.top=`${pad+Math.random()*Math.max(0,maxY-pad)}px`;
+    };
+    const timer=setInterval(moveRunner,240);
+    runner.addEventListener('pointerenter',moveRunner);
+    runner.addEventListener('touchstart',e=>{
+      if(touchDodges<3){touchDodges++;e.preventDefault();moveRunner();}
+    },{passive:false});
+    window.addEventListener('hashchange',()=>{if(idFromHash()==='boss6'){touchDodges=0;setTimeout(moveRunner,60);}});
+    window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+  }
 });
