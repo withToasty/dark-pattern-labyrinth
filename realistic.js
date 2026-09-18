@@ -15,9 +15,9 @@ boss10:'最終確認',stayfinal:'契約継続',fakeend:'申請受付',mail:'メ�
 };
 
 const header=`<div class="portal-head">
-  <div class="portal-utility"><div>HAPPY+ 公式サービスサイト</div><div class="right"><span>法人のお客さま</span><span>お知らせ</span><span>English</span><span>文字サイズ</span></div></div>
-  <div class="portal-main"><div><a class="portal-logo" href="#home">HAPPY<i>+</i></a><div class="portal-tagline">会員向けサービス・各種お手続き</div></div>
-    <nav class="portal-nav"><a href="#service">サービス</a><a href="#faq1">サポート</a><a href="#other2">各種お手続き</a><a href="#footer">企業情報</a><a class="account" href="#mypage">マイページ</a></nav>
+  <div class="portal-utility"><div>HAPPY PLUS, Inc.</div><div class="right"><span>法人のお客さま</span><span>お知らせ</span><span>English</span><span>文字サイズ</span></div></div>
+  <div class="portal-main"><div><a class="portal-logo" href="#home">HAPPY<i>+</i></a><div class="portal-tagline">Digital Products / Cities & Data / Play / Space</div></div>
+    <nav class="portal-nav"><a href="#service">事業・プロジェクト</a><a href="#footer">企業情報</a><a href="#faq1">サポート</a><a href="#other2">各種お手続き</a><a class="account" href="#mypage">マイページ</a></nav>
   </div>
   <div class="portal-search"><form class="portal-search-inner portal-search-form" role="search">
     <label class="portal-search-label">サイト内検索</label>
@@ -40,65 +40,71 @@ const home=document.getElementById('home');
 if(home){
 home.innerHTML=header+`
 <div class="gov-home">
-  <div class="home-alert"><div class="home-alert-inner"><b>重要なお知らせ</b><a href="#footer">会員規約の一部改定について（2026年10月1日適用）</a></div></div>
+  <div class="home-alert"><div class="home-alert-inner"><b>NEWS</b><a href="#footer">進行中のプロジェクトを更新しました</a></div></div>
 
-  <section class="home-page-title">
+  <section class="home-page-title corporate-title">
     <div class="home-page-title-inner">
-      <div class="home-title-kicker">会員向けサービス</div>
-      <h1>HAPPY+ 会員向けサービス</h1>
-      <p>会員情報の確認、契約・料金、支払い方法、各種お手続き、サポートをご利用いただけます。</p>
-    </div>
-  </section>
-
-  <section class="home-main-search">
-    <div class="home-main-search-inner">
-      <label for="home-service-search">手続き・サービスを検索</label>
-      <form class="home-searchbox portal-search-form" role="search">
-        <input id="home-service-search" class="portal-search-input" type="search" placeholder="例：料金、支払い方法、ポイント、退会" aria-label="手続き・サービスを検索">
-        <button type="submit">検索</button>
-        <div class="site-search-results" aria-live="polite"></div>
-      </form>
+      <div class="home-title-kicker">HAPPY PLUS, Inc.</div>
+      <h1>事業・プロジェクト</h1>
+      <p>デジタルプロダクト、都市データ、ゲーム、空間の4領域で、日々の不便や違和感を小さく試しながら形にしています。</p>
+      <div class="corp-stage-inline"><span>IDEA</span><b>→</b><span>RESEARCH</span><b>→</b><span>PROTOTYPE</span><b>→</b><span>BUILDING</span><b>→</b><span>LIVE</span></div>
     </div>
   </section>
 
   <section class="home-section compact">
-    <div class="section-head"><h2>よく利用されるメニュー</h2></div>
-    <div class="home-menu-grid">
-      <a href="#mypage"><strong>会員情報を確認する</strong><span>プロフィール、利用状況、登録情報</span></a>
-      <a href="#contract"><strong>契約・料金を確認する</strong><span>現在のプラン、次回更新日</span></a>
-      <a href="#payment"><strong>支払い方法を確認・変更する</strong><span>登録済みの支払い方法</span></a>
-      <a href="#points"><strong>ポイントを確認する</strong><span>保有ポイント、利用状況</span></a>
-      <a href="#other2"><strong>各種お手続き</strong><span>変更、申請、その他のお手続き</span></a>
-      <a href="#faq1"><strong>よくある質問</strong><span>サービス利用・手続きに関するご案内</span></a>
+    <div class="section-head"><h2>事業領域</h2><a href="#service">すべて見る →</a></div>
+    <div class="business-domain-grid">
+      <a href="#service"><span>DIGITAL PRODUCTS</span><strong>暮らしを軽くする道具</strong><p>予算、記録、日常の判断を支える小さなプロダクト。</p></a>
+      <a href="#service"><span>CITIES & DATA</span><strong>街を、別の見方で読む</strong><p>都市映像、交通、需要データを使った実験と分析。</p></a>
+      <a href="#service"><span>PLAY</span><strong>ルールそのものを遊ぶ</strong><p>ゲーム、音、インタラクションのプロトタイプ。</p></a>
+      <a href="#service"><span>PHYSICAL SPACE</span><strong>場所の使い方をつくり直す</strong><p>倉庫、ジム、拠点などリアル空間の再設計。</p></a>
     </div>
   </section>
 
   <section class="home-section alt">
     <div class="inner">
-      <div class="section-head"><h2>サービス・お手続きから探す</h2><a href="#footer">すべてのメニューを見る →</a></div>
-      <div class="service-grid">
-        <a class="service-link" href="#service"><b>会員特典・クーポン</b><span>会員向けの特典・キャンペーンをご案内します。</span></a>
-        <a class="service-link" href="#points"><b>ポイント</b><span>保有ポイントと利用状況を確認できます。</span></a>
-        <a class="service-link" href="#contract"><b>契約・料金</b><span>契約内容、料金、次回更新日を確認できます。</span></a>
-        <a class="service-link" href="#payment"><b>お支払い</b><span>登録済みのお支払い方法を確認・変更できます。</span></a>
-        <a class="service-link" href="#other2"><b>各種お手続き</b><span>各種変更・申請はこちらから確認できます。</span></a>
-        <a class="service-link" href="#faq1"><b>サポート</b><span>よくある質問、チャットなどをご利用いただけます。</span></a>
+      <div class="section-head"><h2>進行中のプロジェクト</h2><a href="#service">プロジェクト一覧 →</a></div>
+      <div class="project-preview-grid">
+        <a href="#service"><div><span class="mini-status prototype">PROTOTYPE</span><small>CITIES & DATA</small></div><strong>City Techno</strong><p>街の映像認識と、その土地の音をテクノへ変換する映像・音楽実験。</p></a>
+        <a href="#service"><div><span class="mini-status building">BUILDING</span><small>PLAY</small></div><strong>Grid Rogue</strong><p>少ない操作で判断が積み重なる、Webベースのローグライク。</p></a>
+        <a href="#service"><div><span class="mini-status building">BUILDING</span><small>PLAY</small></div><strong>Kecak / Looper</strong><p>声やリズムを重ねて、その場で音楽を作るループ型の音遊び。</p></a>
+        <a href="#service"><div><span class="mini-status research">RESEARCH</span><small>CITIES & DATA</small></div><strong>Taxi Demand Model</strong><p>鉄道運休、天気、人口、道路条件などから需要を読むデータモデル。</p></a>
+        <a href="#service"><div><span class="mini-status prototype">PROTOTYPE</span><small>DIGITAL PRODUCTS</small></div><strong>Weekly Budget</strong><p>入力を頑張らなくても週の全体像を見失わない予算ウィジェット。</p></a>
+        <a href="#service"><div><span class="mini-status idea">IDEA</span><small>PHYSICAL SPACE</small></div><strong>Warehouse Gym</strong><p>車でそのまま入れる倉庫型の小規模フリーウェイト拠点。</p></a>
       </div>
     </div>
   </section>
 
   <section class="home-section">
-    <div class="section-head"><h2>お知らせ</h2><a href="#footer">一覧を見る →</a></div>
-    <div class="news-list">
-      <div class="news-row"><span class="date">2026.09.16</span><span class="label">重要</span><a href="#footer">会員規約の一部改定について</a></div>
-      <div class="news-row"><span class="date">2026.09.10</span><span class="label">サービス</span><a href="#coupon">秋のHAPPY+会員特典を更新しました</a></div>
-      <div class="news-row"><span class="date">2026.09.01</span><span class="label">お知らせ</span><a href="#faq1">サポートページをリニューアルしました</a></div>
+    <div class="section-head"><h2>サービス</h2></div>
+    <div class="service-feature">
+      <div>
+        <div class="home-title-kicker">LIVE SERVICE</div>
+        <h3>HAPPY+ 会員サービス</h3>
+        <p>会員情報、ポイント、契約・料金、各種お手続き、サポートをまとめて利用できる会員サービスです。</p>
+      </div>
+      <div class="service-feature-links">
+        <a class="feature-primary" href="#mypage">マイページ</a>
+        <a href="#service">サービス詳細</a>
+        <a href="#faq1">サポート</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section alt">
+    <div class="inner">
+      <div class="section-head"><h2>お知らせ</h2><a href="#footer">一覧を見る →</a></div>
+      <div class="news-list">
+        <div class="news-row"><span class="date">2026.09.18</span><span class="label">PROJECT</span><a href="#service">City Techno の映像認識フローを更新しました</a></div>
+        <div class="news-row"><span class="date">2026.09.16</span><span class="label">SERVICE</span><a href="#footer">HAPPY+ 会員規約の一部改定について</a></div>
+        <div class="news-row"><span class="date">2026.09.10</span><span class="label">PROJECT</span><a href="#service">Grid Rogue のWeb版を開発中です</a></div>
+      </div>
     </div>
   </section>
 
   <section class="home-contact">
     <div class="home-contact-inner">
-      <div><h3>お問い合わせ・サポート</h3><p>よくある質問、チャット、各種お問い合わせ窓口をご利用いただけます。</p></div>
+      <div><h3>お問い合わせ・サポート</h3><p>会員サービスに関するご質問は、よくある質問またはチャットをご利用ください。</p></div>
       <div class="contact-links"><a href="#faq1">よくある質問</a><a href="#chat1">チャット</a></div>
     </div>
   </section>
@@ -106,18 +112,20 @@ home.innerHTML=header+`
   <footer class="home-footer">
     <div class="home-footer-inner">
       <div class="footer-columns">
-        <div><h4>サービス</h4><a href="#service">サービス一覧</a><a href="#points">ポイント</a><a href="#coupon">会員特典</a></div>
-        <div><h4>お手続き</h4><a href="#contract">契約・料金</a><a href="#payment">支払い方法</a><a href="#other2">各種お手続き</a></div>
-        <div><h4>サポート</h4><a href="#faq1">よくある質問</a><a href="#chat1">チャットサポート</a><a href="#footer">お問い合わせ</a></div>
+        <div><h4>事業・プロジェクト</h4><a href="#service">プロジェクト一覧</a><a href="#footer">会社情報</a></div>
+        <div><h4>HAPPY+ 会員サービス</h4><a href="#mypage">マイページ</a><a href="#contract">契約・料金</a><a href="#other2">各種お手続き</a></div>
+        <div><h4>サポート</h4><a href="#faq1">よくある質問</a><a href="#chat1">チャットサポート</a></div>
         <div><h4>企業情報</h4><a href="#footer">会社概要</a><a href="#footer">利用規約</a><a href="#footer">プライバシーポリシー</a></div>
       </div>
-      <div class="footer-bottom"><span>HAPPY+ / HAPPY PLUS, Inc.</span><span>© 2026 HAPPY PLUS, Inc.</span></div>
+      <div class="footer-bottom"><span>HAPPY PLUS, Inc.</span><span>© 2026 HAPPY PLUS, Inc.</span></div>
     </div>
   </footer>
-</div>`;
-}
+</div>`}
 
 const searchIndex=[
+{title:'City Techno',desc:'街の映像認識と音を組み合わせる映像・音楽プロジェクト。',href:'#service',words:['city techno','街','テクノ','映像','画像認識']},
+{title:'Grid Rogue',desc:'Webベースのローグライクゲーム。',href:'#service',words:['grid rogue','ゲーム','ローグライク']},
+{title:'Weekly Budget',desc:'週単位の予算管理ウィジェット。',href:'#service',words:['weekly budget','予算','ウィジェット']},
 {title:'マイページ',desc:'会員情報、利用状況、登録情報を確認できます。',href:'#mypage',words:['マイページ','会員情報','登録情報','プロフィール','住所','名前']},
 {title:'契約・料金',desc:'現在の契約内容、料金、次回更新日を確認できます。',href:'#contract',words:['契約','料金','月額','プラン','更新','請求']},
 {title:'支払い方法',desc:'登録済みの支払い方法を確認・変更できます。',href:'#payment',words:['支払い','決済','カード','クレジットカード','請求']},
