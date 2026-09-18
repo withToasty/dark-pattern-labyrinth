@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 const immersiveIds=['home','service','jointrap','footer','mypage','points','coupon','history','settings','profile','notice','contract','upgrade','payment','other','other2','receipt','namechange','pause','pausetrap','faq1','faqanswer','retain1','other3','applydoor','boss1','resetloop','boss2','closeTrap','boss3','boss4','boss5','reasontrap','boss6','runnerCaught','boss7','wrongLearned','boss8','chat1','chat2','chat3','callback','boss9','surveytrap','boss10','stayfinal','fakeend','mail','lastlogin'];
 
 const pageNames={
-home:'会員向けサービス',service:'サービス',jointrap:'新規会員登録',footer:'サイトマップ',mypage:'マイページ',
+home:'会員向けサービス',service:'サービス',jointrap:'新規会員登録',footer:'企業情報',mypage:'マイページ',
 points:'ポイント',coupon:'会員特典・クーポン',history:'利用履歴',settings:'各種設定',profile:'プロフィール設定',
 notice:'通知設定',contract:'契約・料金',upgrade:'プラン変更',payment:'支払い方法',other:'その他のお手続き',
 other2:'各種お手続き',receipt:'領収書',namechange:'名義変更',pause:'一時休止',pausetrap:'一時休止',
