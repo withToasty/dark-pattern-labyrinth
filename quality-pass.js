@@ -193,6 +193,36 @@ document.addEventListener('DOMContentLoaded',()=>{
     const a=mail.querySelector('a[href="#lastlogin"]');if(a)a.textContent='本人確認へ進む';
   }
 
+
+  // FAQ explains cancellation but deliberately does not expose the actual application entrance.
+  const faq=wrap('faq1');
+  if(faq) faq.innerHTML=`
+    <h2>よくある質問</h2>
+    <p>よくお問い合わせいただく内容をご案内します。</p>
+    <div class="real-list">
+      <a href="#faq1"><strong>料金・請求について</strong><span>月額料金、請求日、明細の確認方法</span></a>
+      <a href="#faq1"><strong>ポイント・会員特典について</strong><span>ポイントの有効期限、クーポンの利用方法</span></a>
+      <a href="#resetloop"><strong>ログイン・パスワードについて</strong><span>パスワードを忘れた場合のお手続き</span></a>
+      <a href="#faqanswer"><strong>退会・解約について</strong><span>退会前の確認事項とご案内</span></a>
+    </div>
+    <a class="tiny" href="#home">会員向けサービスTOPへ戻る</a>`;
+
+  const faqanswer=wrap('faqanswer');
+  if(faqanswer) faqanswer.innerHTML=`
+    <h2>退会・解約について</h2>
+    <p>退会をご検討中のお客様は、現在の契約内容と以下の注意事項をご確認ください。</p>
+    <div class="notice-box">
+      退会すると、保有ポイント、会員ランク、未使用の会員限定クーポンは失効します。退会後に再登録した場合も、以前の情報は引き継がれません。
+    </div>
+    <h3 class="subhead-real">お手続き方法</h3>
+    <p>契約種別やお支払い状況により、お手続き方法が異なります。マイページの「契約・料金」から現在の契約内容をご確認のうえ、対象となるお手続きメニューへお進みください。</p>
+    <div class="real-list">
+      <a href="#contract"><strong>契約・料金を確認する</strong><span>現在のプラン、次回更新日、お支払い状況を確認します。</span></a>
+      <a href="#pause"><strong>一時休止について確認する</strong><span>月額0円で3か月間休止できる制度をご案内します。</span></a>
+      <a href="#chat1"><strong>チャットサポートに問い合わせる</strong><span>お手続き方法が分からない場合はこちら。</span></a>
+    </div>
+    <a class="tiny" href="#faq1">よくある質問へ戻る</a>`;
+
   // Remove leftover game/meta labels from the service UI.
   document.querySelectorAll('.immersive .sub').forEach(el=>{
     if(/STEP\s*\d|WORLD|BOSS|YOU FOUND|HAPPY\+ SUPPORT|FAQ ARTICLE|MAIL/i.test(el.textContent))el.remove();
