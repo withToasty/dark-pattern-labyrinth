@@ -7,15 +7,26 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Public-facing pages should read like a real service, not like game commentary.
   const service=wrap('service');
   if(service) service.innerHTML=`
-    <h2>サービスのご案内</h2>
-    <p>HAPPY+会員向けの特典、ポイント、サポートサービスをご案内します。</p>
-    <div class="real-list">
-      <a href="#coupon"><strong>会員特典・クーポン</strong><span>会員限定の特典やキャンペーンを確認できます。</span></a>
-      <a href="#points"><strong>ポイントサービス</strong><span>保有ポイントや利用状況を確認できます。</span></a>
-      <a href="#faq1"><strong>サポート</strong><span>よくある質問、各種お問い合わせをご利用いただけます。</span></a>
+    <div class="corp-kicker">BUSINESS / PROJECTS</div>
+    <h2>事業・プロジェクト</h2>
+    <p class="corp-lead">完成品だけでなく、調査中・試作中・開発中のものも公開しています。</p>
+    <div class="corp-status-guide">
+      <span><i class="dot idea"></i>IDEA</span><span><i class="dot research"></i>RESEARCH</span><span><i class="dot prototype"></i>PROTOTYPE</span><span><i class="dot building"></i>BUILDING</span><span><i class="dot live"></i>LIVE</span>
     </div>
-    <a class="btn primary" href="#jointrap">新規会員登録</a>
-    <a class="tiny" href="#home">会員向けサービスTOPへ戻る</a>`;
+    <div class="corp-project-grid">
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status prototype">PROTOTYPE</span><span>Cities & Data</span></div><h4>City Techno</h4><p>街の映像から対象物を認識し、工事音、踏切、交通、寺社など街固有の音をテクノへ変換する映像・音楽実験。</p><div class="corp-project-foot">CURRENT / video recognition pipeline</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status building">BUILDING</span><span>Play</span></div><h4>Grid Rogue</h4><p>マス目を進み、敵を倒し、コインとアイテムを集めるシンプルなローグライク。</p><div class="corp-project-foot">CURRENT / web playable build</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status building">BUILDING</span><span>Play</span></div><h4>Kecak / Looper</h4><p>声やリズムを重ねて、その場で音楽を組み立てるループ型の音遊び。</p><div class="corp-project-foot">CURRENT / interaction design</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status research">RESEARCH</span><span>Cities & Data</span></div><h4>Taxi Demand Model</h4><p>鉄道運休、天気、人口、道路幅、沿線構造、土地利用などを組み合わせて需要を読むデータモデル。</p><div class="corp-project-foot">CURRENT / data inventory</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status prototype">PROTOTYPE</span><span>Digital Products</span></div><h4>Weekly Budget</h4><p>週予算を残高として見る軽量ウィジェット。毎日の入力を前提にせず、全体像だけを残す。</p><div class="corp-project-foot">CURRENT / iPhone widget prototype</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status research">RESEARCH</span><span>Human Behavior</span></div><h4>Mission Log</h4><p>音声・動画・日時を残し、未来の自分が現在地を見返せる個人ログ。</p><div class="corp-project-foot">CURRENT / logging model research</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status idea">IDEA</span><span>Game</span></div><h4>Shape Game</h4><p>自分で描いた図形が、その重心を基準に回転しながら進む物理ゲーム。</p><div class="corp-project-foot">NEXT / physics prototype</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status idea">IDEA</span><span>Physical Space</span></div><h4>Warehouse Gym</h4><p>倉庫にラックとフリーウェイトを置き、車でそのまま入れる小規模ジム。</p><div class="corp-project-foot">CURRENT / business concept</div></article>
+      <article class="corp-project-card"><div class="corp-project-meta"><span class="corp-status research">RESEARCH</span><span>Communication</span></div><h4>Pictogram Project</h4><p>言語が通じなくても、必要なものを指して伝えられる生活用ピクトグラムの実験。</p><div class="corp-project-foot">CURRENT / icon taxonomy</div></article>
+    </div>
+    <section class="corp-principle"><div><span class="corp-kicker">HOW WE WORK</span><h3>未完成を、未完成のまま公開する。</h3><p>WHY / IDEA / CURRENT / NEXT / LOG を残し、途中経過そのものをプロジェクトの資産として扱います。</p></div></section>
+    <section class="service-inline-card"><div><span class="corp-status live">LIVE</span><h3>HAPPY+ 会員サービス</h3><p>会員情報、ポイント、契約・料金、各種お手続き、サポートを提供する会員サービス。</p></div><a class="btn primary" href="#mypage">マイページへ</a></section>
+    <a class="tiny" href="#home">企業TOPへ戻る</a>`;
 
   const join=wrap('jointrap');
   if(join) join.innerHTML=`
