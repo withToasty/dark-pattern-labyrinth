@@ -194,6 +194,127 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
 
+
+  // Corporate page: real services and experimental projects give the company a believable reason to exist.
+  const corp=wrap('footer');
+  if(corp) corp.innerHTML=`
+    <div class="corp-kicker">HAPPY PLUS, Inc.</div>
+    <h2>事業・プロジェクト</h2>
+    <p class="corp-lead">私たちは、日々の暮らし、都市、遊び、空間にまつわるアイデアを、小さく試し、育てています。</p>
+
+    <div class="corp-status-guide">
+      <span><i class="dot idea"></i>IDEA</span>
+      <span><i class="dot research"></i>RESEARCH</span>
+      <span><i class="dot prototype"></i>PROTOTYPE</span>
+      <span><i class="dot building"></i>BUILDING</span>
+      <span><i class="dot live"></i>LIVE</span>
+    </div>
+
+    <section class="corp-project-section">
+      <div class="corp-section-head"><span>DIGITAL PRODUCTS</span><h3>暮らしを軽くする、小さな道具</h3></div>
+      <div class="corp-project-grid">
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status prototype">PROTOTYPE</span><span>Systems</span></div>
+          <h4>Weekly Budget</h4>
+          <p>週予算を「残高」として見るための軽量ウィジェット。毎日の入力を前提にせず、全体像だけを残す。</p>
+          <div class="corp-project-foot">CURRENT / iPhone widget prototype</div>
+        </article>
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status research">RESEARCH</span><span>Human Behavior</span></div>
+          <h4>Mission Log</h4>
+          <p>音声・動画・日時を残し、未来の自分が現在地を見返せる個人ログ。記録は軽く、意味づけは後から。</p>
+          <div class="corp-project-foot">CURRENT / logging model research</div>
+        </article>
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status building">BUILDING</span><span>Play</span></div>
+          <h4>Kecak / Looper</h4>
+          <p>声やリズムを重ねて、その場で音楽を組み立てるループ型の音遊び。操作そのものが演奏になる体験。</p>
+          <div class="corp-project-foot">CURRENT / interaction design</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="corp-project-section">
+      <div class="corp-section-head"><span>CITIES & DATA</span><h3>街を、別の見方で読む</h3></div>
+      <div class="corp-project-grid">
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status prototype">PROTOTYPE</span><span>Cities</span></div>
+          <h4>City Techno</h4>
+          <p>街の映像から対象物を認識し、工事音、踏切、交通、寺社など街固有の音をテクノへ変換する映像・音楽実験。</p>
+          <div class="corp-project-foot">CURRENT / video recognition pipeline</div>
+        </article>
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status research">RESEARCH</span><span>Cities</span></div>
+          <h4>Taxi Demand Model</h4>
+          <p>鉄道運休、天気、人口、道路幅、沿線構造、土地利用などを組み合わせ、タクシー需要を読むためのデータモデル。</p>
+          <div class="corp-project-foot">CURRENT / data inventory</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="corp-project-section">
+      <div class="corp-section-head"><span>PLAY</span><h3>ルールそのものを遊ぶ</h3></div>
+      <div class="corp-project-grid">
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status building">BUILDING</span><span>Game</span></div>
+          <h4>Grid Rogue</h4>
+          <p>マス目を進み、敵を倒し、コインとアイテムを集めるシンプルなローグライク。少ない操作で判断が積み重なる設計。</p>
+          <div class="corp-project-foot">CURRENT / web playable build</div>
+        </article>
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status idea">IDEA</span><span>Game</span></div>
+          <h4>Shape Game</h4>
+          <p>自分で描いた図形が、その重心を基準に回転しながら進む物理ゲーム。形そのものが性能になる。</p>
+          <div class="corp-project-foot">NEXT / physics prototype</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="corp-project-section">
+      <div class="corp-section-head"><span>PHYSICAL SPACE</span><h3>場所の使い方をつくり直す</h3></div>
+      <div class="corp-project-grid">
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status idea">IDEA</span><span>Physical Space</span></div>
+          <h4>Warehouse Gym</h4>
+          <p>倉庫にラックとフリーウェイトだけを置き、車でそのまま入れる小規模ジム。運動、サウナ、読書までを一つの拠点に。</p>
+          <div class="corp-project-foot">CURRENT / business concept</div>
+        </article>
+        <article class="corp-project-card">
+          <div class="corp-project-meta"><span class="corp-status research">RESEARCH</span><span>Communication</span></div>
+          <h4>Pictogram Project</h4>
+          <p>言語が通じなくても「食べたいもの」「必要なもの」を指して伝えられる、生活用ピクトグラムの実験。</p>
+          <div class="corp-project-foot">CURRENT / icon taxonomy</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="corp-principle">
+      <div>
+        <span class="corp-kicker">HOW WE WORK</span>
+        <h3>未完成を、未完成のまま公開する。</h3>
+        <p>完成したものだけでなく、調査中、試作中、止まったものも記録します。各プロジェクトには WHY / IDEA / CURRENT / NEXT / LOG を残し、途中経過そのものを資産にします。</p>
+      </div>
+      <div class="corp-stage-flow">
+        <span>IDEA</span><b>→</b><span>RESEARCH</span><b>→</b><span>PROTOTYPE</span><b>→</b><span>BUILDING</span><b>→</b><span>LIVE</span>
+      </div>
+    </section>
+
+    <section class="corp-company">
+      <h3>会社情報</h3>
+      <dl>
+        <div><dt>会社名</dt><dd>HAPPY PLUS, Inc.</dd></div>
+        <div><dt>事業内容</dt><dd>デジタルサービス、都市データ活用、コンテンツ・ゲーム、空間サービスの企画・開発</dd></div>
+        <div><dt>設立</dt><dd>2026年</dd></div>
+      </dl>
+    </section>
+
+    <a class="tiny sneaky corp-hidden-route" href="#mypage">会員情報の変更・その他お手続き</a>`;
+
+  const homeFooter=document.querySelector('#home .footer-columns>div:last-child');
+  if(homeFooter && !homeFooter.textContent.includes('事業・プロジェクト')){
+    const a=document.createElement('a');a.href='#footer';a.textContent='事業・プロジェクト';homeFooter.prepend(a);
+  }
+
   // FAQ explains cancellation but deliberately does not expose the actual application entrance.
   const faq=wrap('faq1');
   if(faq) faq.innerHTML=`
