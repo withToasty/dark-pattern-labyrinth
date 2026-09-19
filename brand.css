@@ -1,0 +1,622 @@
+/* ============================================================
+   WITH TOAST — brand layer
+   Base stays calm. Projects bring color.
+   ============================================================ */
+
+.wt-layer {
+  --wt-charcoal: #202020;
+  --wt-charcoal-soft: #2a2a2a;
+  --wt-charcoal-line: #3a3a3a;
+  --wt-cream: #f2ebdd;
+  --wt-cream-dim: #cfc7b8;
+  --wt-orange: #c56a3d;
+  --wt-gray: #8e8e8e;
+  --wt-indigo: #202688;
+
+  --wt-font:
+    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Hiragino Sans', 'Helvetica Neue',
+    sans-serif;
+
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--wt-charcoal);
+  color: var(--wt-cream);
+  font-family: var(--wt-font);
+  -webkit-font-smoothing: antialiased;
+}
+body:has(.page:target) .wt-layer {
+  display: none;
+}
+
+.wt-layer * {
+  box-sizing: border-box;
+}
+
+.wt-page {
+  display: none;
+  min-height: 100%;
+}
+.wt-page:target {
+  display: block;
+}
+#wt-home {
+  display: block;
+}
+body:has(.wt-page:target) #wt-home {
+  display: none;
+}
+
+/* ---------------- shared layout shell ---------------- */
+
+.wt-shell {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+
+.wt-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(32, 32, 32, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--wt-charcoal-line);
+}
+
+.wt-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--wt-cream);
+  text-decoration: none;
+}
+.wt-wordmark b {
+  font-weight: 800;
+}
+.wt-wordmark .wt-dot {
+  color: var(--wt-orange);
+  transition: color 0.35s ease;
+}
+.wt-wordmark:hover .wt-dot {
+  color: var(--wt-indigo);
+}
+
+.wt-nav-links {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.wt-nav-links a {
+  color: var(--wt-cream-dim);
+  text-decoration: none;
+  padding: 7px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+.wt-nav-links a:hover,
+.wt-nav-links a.is-current {
+  color: var(--wt-charcoal);
+  background: var(--wt-cream);
+}
+
+/* ---------------- hero ---------------- */
+
+.wt-hero {
+  padding: 72px 0 40px;
+  text-align: center;
+  position: relative;
+}
+
+.wt-hero-mark {
+  font-size: clamp(38px, 9vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+  margin: 0 0 14px;
+}
+.wt-hero-mark .wt-dot {
+  color: var(--wt-orange);
+}
+
+.wt-hero-jp {
+  font-size: clamp(16px, 3.4vw, 20px);
+  color: var(--wt-cream-dim);
+  margin: 0 0 34px;
+  letter-spacing: 0.02em;
+}
+
+.wt-hero-en {
+  font-size: 12px;
+  color: var(--wt-gray);
+  letter-spacing: 0.06em;
+  margin: 0 0 44px;
+  line-height: 1.9;
+}
+
+/* floating ingredient words that drift, then settle into a project name */
+.wt-hero-mix {
+  position: relative;
+  max-width: 560px;
+  margin: 0 auto 8px;
+  min-height: 120px;
+}
+.wt-hero-tag {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 7px 13px;
+  border: 1px solid var(--wt-charcoal-line);
+  border-radius: 999px;
+  color: var(--wt-cream-dim);
+  background: var(--wt-charcoal-soft);
+  animation: wt-drift 7s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.wt-hero-tag:nth-child(1) {
+  top: 4px;
+  left: 6%;
+}
+.wt-hero-tag:nth-child(2) {
+  top: 0;
+  right: 8%;
+}
+.wt-hero-tag:nth-child(3) {
+  top: 52px;
+  left: 20%;
+}
+.wt-hero-tag:nth-child(4) {
+  top: 58px;
+  right: 18%;
+}
+.wt-hero-tag:nth-child(5) {
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+@keyframes wt-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+.wt-hero-tag:nth-child(3) {
+  transform: none;
+}
+
+.wt-hero-result {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--wt-gray);
+}
+.wt-hero-result b {
+  color: var(--wt-orange);
+  font-weight: 800;
+}
+
+.wt-inline-link {
+  color: var(--wt-orange);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.wt-inline-link:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-hero-tag {
+    animation: none;
+  }
+}
+
+/* ---------------- generic section header ---------------- */
+
+.wt-section {
+  padding: 56px 0 8px;
+}
+.wt-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--wt-charcoal-line);
+}
+.wt-section-head h1,
+.wt-section-head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.wt-section-lead {
+  color: var(--wt-cream-dim);
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 640px;
+  margin: 0 0 30px;
+}
+.wt-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--wt-orange);
+  text-transform: uppercase;
+}
+
+/* ---------------- status pill ---------------- */
+
+.wt-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wt-cream-dim);
+}
+.wt-status-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.wt-status-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wt-charcoal-line);
+  display: block;
+}
+.wt-status-dots i.is-filled {
+  background: var(--wt-orange);
+}
+.wt-status.is-done .wt-status-dots i.is-filled {
+  background: var(--wt-cream);
+}
+
+/* ---------------- project card ---------------- */
+
+.wt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.wt-card {
+  position: relative;
+  display: block;
+  padding: 18px 18px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--wt-charcoal-line);
+  background: var(--wt-charcoal-soft);
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+.wt-card:hover {
+  border-color: var(--wt-orange);
+  transform: translateY(-2px);
+}
+.wt-card-num {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--wt-indigo);
+  opacity: 0.85;
+  letter-spacing: 0.04em;
+}
+.wt-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.wt-card h3 {
+  margin: 6px 0 8px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+}
+.wt-card p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--wt-cream-dim);
+}
+.wt-card-field {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--wt-gray);
+  text-transform: uppercase;
+}
+
+.wt-ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+.wt-ingredients-label {
+  width: 100%;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--wt-gray);
+  margin-bottom: 2px;
+}
+.wt-chip {
+  font-size: 10px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--wt-charcoal-line);
+  color: var(--wt-cream-dim);
+}
+
+.wt-card.wt-card-play {
+  border-color: var(--wt-orange);
+  background: linear-gradient(160deg, var(--wt-charcoal-soft), #241a14);
+}
+.wt-card-play-cta {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--wt-orange);
+  letter-spacing: 0.03em;
+}
+.wt-card-play-cta::after {
+  content: ' →';
+}
+
+/* ---------------- now making (featured) ---------------- */
+
+.wt-making-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wt-making-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 20px 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--wt-charcoal-line);
+  background: linear-gradient(180deg, var(--wt-charcoal-soft), var(--wt-charcoal));
+}
+.wt-making-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.wt-making-card h3 {
+  margin: 4px 0 8px;
+  font-size: 19px;
+  font-weight: 800;
+}
+.wt-making-card p {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--wt-cream-dim);
+  max-width: 60ch;
+}
+
+/* ---------------- WHY TOAST (light section) ---------------- */
+
+.wt-why-page {
+  background: var(--wt-cream);
+  color: var(--wt-charcoal);
+}
+.wt-why-page .wt-nav {
+  background: rgba(242, 235, 221, 0.88);
+  border-bottom-color: rgba(32, 32, 32, 0.12);
+}
+.wt-why-page .wt-wordmark {
+  color: var(--wt-charcoal);
+}
+.wt-why-page .wt-nav-links a {
+  color: rgba(32, 32, 32, 0.55);
+}
+.wt-why-page .wt-nav-links a:hover,
+.wt-why-page .wt-nav-links a.is-current {
+  color: var(--wt-cream);
+  background: var(--wt-charcoal);
+}
+
+.wt-why-step {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 90px 20px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+.wt-why-step.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.wt-why-step p {
+  font-size: 16px;
+  line-height: 2;
+  color: #4a4237;
+  margin: 0 0 8px;
+}
+.wt-why-step.wt-why-lede p {
+  font-size: 19px;
+  color: var(--wt-charcoal);
+}
+
+.wt-why-toast {
+  font-size: clamp(30px, 8vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.wt-why-toppings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+.wt-why-toppings span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(32, 32, 32, 0.16);
+  color: rgba(32, 32, 32, 0.65);
+}
+
+.wt-why-statement {
+  font-size: clamp(20px, 4.6vw, 30px);
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+.wt-why-statement em {
+  font-style: normal;
+  color: var(--wt-orange);
+}
+
+.wt-why-flip {
+  position: relative;
+  min-height: 130px;
+  overflow: hidden;
+}
+.wt-why-flip span {
+  display: block;
+  font-size: clamp(22px, 5.4vw, 32px);
+  line-height: 1.35;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+.wt-why-flip .wt-by {
+  opacity: 1;
+  transform: translateY(0);
+}
+.wt-why-flip .wt-with {
+  position: absolute;
+  inset: 0;
+  color: var(--wt-orange);
+  opacity: 0;
+  transform: translateY(12px);
+}
+.wt-why-step.is-visible .wt-why-flip .wt-by {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+.wt-why-step.is-visible .wt-why-flip .wt-with {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------------- WITH (collaborators) ---------------- */
+
+.wt-with-card {
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px dashed var(--wt-charcoal-line);
+  color: var(--wt-cream-dim);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.wt-with-card strong {
+  color: var(--wt-cream);
+}
+
+/* ---------------- footer ---------------- */
+
+.wt-footer {
+  max-width: 880px;
+  margin: 40px auto 0;
+  padding: 20px 20px 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--wt-gray);
+  border-top: 1px solid var(--wt-charcoal-line);
+}
+.wt-why-page .wt-footer {
+  border-top-color: rgba(32, 32, 32, 0.12);
+}
+.wt-footer-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wt-charcoal-line);
+  transition: background 0.4s ease;
+  cursor: default;
+}
+.wt-footer-dot:hover {
+  background: var(--wt-indigo);
+}
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 640px) {
+  .wt-nav {
+    padding: 14px 16px;
+  }
+  .wt-nav-links {
+    gap: 2px;
+  }
+  .wt-nav-links a {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .wt-shell {
+    padding: 0 16px 60px;
+  }
+  .wt-hero {
+    padding: 48px 0 28px;
+  }
+  .wt-hero-mix {
+    min-height: 150px;
+  }
+}
