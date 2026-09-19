@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded',()=>{
   const visual=(type)=>({
-    city:`<div class="artifact-visual art-city" aria-hidden="true"><div class="city-glow"></div><span class="city-road r1"></span><span class="city-road r2"></span><span class="detect d1"><i>car 0.92</i></span><span class="detect d2"><i>person 0.88</i></span><span class="detect d3"><i>bus 0.84</i></span><span class="detect d4"><i>signal 0.78</i></span><b>CITY / AUDIO OBJECT MAP</b></div>`,
-    budget:`<div class="artifact-visual art-budget" aria-hidden="true"><div class="budget-top">9/14〜9/20　今週あと</div><strong>9,200円</strong><div class="budget-sub">支出 800円　/　繰越 0円</div><div class="budget-days"><span>月<em>—</em></span><span>火<em>800</em></span><span>水<em>—</em></span><span>木<em>—</em></span><span>金<em>—</em></span><span>土<em>—</em></span><span>日<em>—</em></span></div><small>タップで支出追加・NMD</small></div>`,
-    grid:`<div class="artifact-visual art-grid" aria-hidden="true"><span class="grid-player"></span><span class="grid-enemy e1"></span><span class="grid-enemy e2"></span><span class="grid-coin c1"></span><span class="grid-coin c2"></span><b>RUN 014 / FLOOR 03</b></div>`,
+    city:`<div class="artifact-visual artifact-photo city-real"><img src="assets/city-techno.webp" alt="City Techno concept visual"><span class="artifact-kind">CONCEPT VISUAL</span></div>`,
+    budget:`<div class="artifact-visual artifact-photo budget-real"><img src="assets/weekly-budget.webp" alt="Weekly Budget working widget prototype"><span class="artifact-kind">WORKING PROTOTYPE</span></div>`,
+    grid:`<div class="artifact-visual artifact-photo grid-real"><img src="assets/grid-rogue.webp" alt="Grid Rogue working game prototype"><span class="artifact-kind">WORKING PROTOTYPE</span></div>`,
     loop:`<div class="artifact-visual art-loop" aria-hidden="true"><div class="loop-ring one"></div><div class="loop-ring two"></div><div class="wave-bars">${Array.from({length:18},(_,i)=>`<i style="--h:${28+(i*17)%70}%"></i>`).join('')}</div><b>VOICE LOOP / 120 BPM</b></div>`,
     taxi:`<div class="artifact-visual art-taxi" aria-hidden="true"><span class="route a"></span><span class="route b"></span><span class="route c"></span><i class="heat h1"></i><i class="heat h2"></i><i class="heat h3"></i><i class="heat h4"></i><i class="heat h5"></i><b>DEMAND / 19:30</b></div>`,
     gym:`<div class="artifact-visual art-gym" aria-hidden="true"><span class="rack rk1"></span><span class="rack rk2"></span><span class="bay"></span><span class="car"></span><b>DRIVE-IN TRAINING BAY</b></div>`,
@@ -25,6 +25,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     return '';
   };
 
+  const artifactLabel=(type)=>({
+    loop:'INTERACTION STUDY',
+    taxi:'SYSTEM DIAGRAM',
+    gym:'LAYOUT STUDY',
+    log:'UI STUDY',
+    shape:'MECHANICS STUDY',
+    pictogram:'SYSTEM STUDY'
+  }[type]||'');
+
   const decorate=(root,selector,titleSelector)=>{
     root?.querySelectorAll(selector).forEach(card=>{
       if(card.querySelector('.artifact-visual'))return;
@@ -33,6 +42,11 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(!type)return;
       card.classList.add('has-artifact');
       card.insertAdjacentHTML('afterbegin',visual(type));
+      const label=artifactLabel(type);
+      const media=card.querySelector('.artifact-visual');
+      if(label&&media&&!media.querySelector('.artifact-kind')){
+        media.insertAdjacentHTML('beforeend','<span class="artifact-kind">'+label+'</span>');
+      }
     });
   };
 
@@ -52,8 +66,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   decorate(home,'.project-preview-grid > a','strong');
   const service=document.getElementById('service');
   decorate(service,'.corp-project-card','h4');
+  const guide=service?.querySelector('.corp-status-guide');
+  if(guide&&!service.querySelector('.artifact-policy')){
+    guide.insertAdjacentHTML('afterend','<p class="artifact-policy"><b>ARTIFACT LABELS</b>　実画面・試作品・コンセプト画像・図解を区別して表示しています。</p>');
+  }
   const corp=document.getElementById('footer');
   decorate(corp,'.corp-project-card','h4');
+  const corpGuide=corp?.querySelector('.corp-status-guide');
+  if(corpGuide&&!corp?.querySelector('.artifact-policy')){
+    corpGuide.insertAdjacentHTML('afterend','<p class="artifact-policy"><b>ARTIFACT LABELS</b>　実画面・試作品・コンセプト画像・図解を区別して表示しています。</p>');
+  }
 
   const serviceCrumb=service?.querySelector('.portal-breadcrumb span:last-child');
   if(serviceCrumb)serviceCrumb.textContent='事業・プロジェクト';
