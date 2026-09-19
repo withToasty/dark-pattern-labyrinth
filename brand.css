@@ -10,12 +10,24 @@
   --wt-cream: #f2ebdd;
   --wt-cream-dim: #cfc7b8;
   --wt-orange: #c56a3d;
-  --wt-gray: #8e8e8e;
+  /* lightened orange for small text on dark backgrounds (WCAG AA, 4.5:1+) */
+  --wt-orange-text: #cd805a;
+  --wt-gray: #999999;
   --wt-indigo: #202688;
 
   --wt-font:
     -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Hiragino Sans', 'Helvetica Neue',
     sans-serif;
+
+  /* spacing scale (4px base), for a more deliberate visual rhythm */
+  --wt-space-1: 4px;
+  --wt-space-2: 8px;
+  --wt-space-3: 12px;
+  --wt-space-4: 16px;
+  --wt-space-5: 20px;
+  --wt-space-6: 24px;
+  --wt-space-8: 32px;
+  --wt-space-10: 40px;
 
   display: block;
   position: fixed;
@@ -34,6 +46,18 @@ body:has(.page:target) .wt-layer {
 
 .wt-layer * {
   box-sizing: border-box;
+}
+
+/* keyboard focus ring — visible only for keyboard nav, never on mouse/touch */
+.wt-layer a:focus-visible,
+.wt-layer button:focus-visible,
+.wt-layer input:focus-visible {
+  outline: 2px solid var(--wt-orange-text);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.wt-why-page a:focus-visible {
+  outline-color: var(--wt-orange);
 }
 
 .wt-page {
@@ -77,6 +101,8 @@ body:has(.wt-page:target) #wt-home {
   display: inline-flex;
   align-items: baseline;
   gap: 2px;
+  min-height: 36px;
+  padding: 6px 2px;
   font-weight: 800;
   font-size: 15px;
   letter-spacing: 0.02em;
@@ -87,7 +113,7 @@ body:has(.wt-page:target) #wt-home {
   font-weight: 800;
 }
 .wt-wordmark .wt-dot {
-  color: var(--wt-orange);
+  color: var(--wt-orange-text);
   transition: color 0.35s ease;
 }
 .wt-wordmark:hover .wt-dot {
@@ -96,14 +122,17 @@ body:has(.wt-page:target) #wt-home {
 
 .wt-nav-links {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
   font-size: 12px;
 }
 .wt-nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
   color: var(--wt-cream-dim);
   text-decoration: none;
-  padding: 7px 10px;
+  padding: var(--wt-space-2) var(--wt-space-3);
   border-radius: 999px;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -211,12 +240,12 @@ body:has(.wt-page:target) #wt-home {
   color: var(--wt-gray);
 }
 .wt-hero-result b {
-  color: var(--wt-orange);
+  color: var(--wt-orange-text);
   font-weight: 800;
 }
 
 .wt-inline-link {
-  color: var(--wt-orange);
+  color: var(--wt-orange-text);
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
@@ -225,9 +254,29 @@ body:has(.wt-page:target) #wt-home {
   text-decoration: underline;
 }
 
+/* generic scroll-reveal, used by project cards (see brand.js) */
+.wt-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+  transition-delay: var(--reveal-delay, 0s);
+}
+.wt-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wt-hero-tag {
     animation: none;
+  }
+  .wt-reveal,
+  .wt-why-step {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
 
@@ -263,7 +312,7 @@ body:has(.wt-page:target) #wt-home {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
-  color: var(--wt-orange);
+  color: var(--wt-orange-text);
   text-transform: uppercase;
 }
 
@@ -309,7 +358,7 @@ body:has(.wt-page:target) #wt-home {
 .wt-card {
   position: relative;
   display: block;
-  padding: 18px 18px 20px;
+  padding: var(--wt-space-5) var(--wt-space-5) var(--wt-space-6);
   border-radius: 14px;
   border: 1px solid var(--wt-charcoal-line);
   background: var(--wt-charcoal-soft);
@@ -392,7 +441,7 @@ body:has(.wt-page:target) #wt-home {
   margin-top: 4px;
   font-size: 11px;
   font-weight: 800;
-  color: var(--wt-orange);
+  color: var(--wt-orange-text);
   letter-spacing: 0.03em;
 }
 .wt-card-play-cta::after {
@@ -410,7 +459,7 @@ body:has(.wt-page:target) #wt-home {
   display: block;
   text-decoration: none;
   color: inherit;
-  padding: 20px 20px 22px;
+  padding: var(--wt-space-6);
   border-radius: 16px;
   border: 1px solid var(--wt-charcoal-line);
   background: linear-gradient(180deg, var(--wt-charcoal-soft), var(--wt-charcoal));

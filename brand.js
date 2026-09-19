@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const footer = () => `
     <footer class="wt-footer">
       <span>WITH TOAST</span>
-      <span class="wt-footer-dot" title="8.8"></span>
+      <span class="wt-footer-dot" title="8.8" aria-hidden="true"></span>
     </footer>`;
 
   const statusDots = (status) => {
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dots = STATUS_ORDER.map(
       (_, i) => `<i class="${i <= level ? 'is-filled' : ''}"></i>`,
     ).join('');
-    return `<span class="wt-status${status === 'done' ? ' is-done' : ''}"><span class="wt-status-dots">${dots}</span>${STATUS_LABEL[status]}</span>`;
+    return `<span class="wt-status${status === 'done' ? ' is-done' : ''}"><span class="wt-status-dots" aria-hidden="true">${dots}</span>${STATUS_LABEL[status]}</span>`;
   };
 
   const ingredientChips = (list) =>
@@ -137,9 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const projectCard = (p, index) => {
     const tag = p.href ? 'a' : 'div';
     const hrefAttr = p.href ? ` href="${p.href}"` : '';
+    const delay = ((index % 6) * 0.06).toFixed(2);
     return `
-    <${tag} class="wt-card${p.playable ? ' wt-card-play' : ''}"${hrefAttr}>
-      <span class="wt-card-num">${String(index + 1).padStart(2, '0')}</span>
+    <${tag} class="wt-card wt-reveal${p.playable ? ' wt-card-play' : ''}"${hrefAttr} style="--reveal-delay:${delay}s">
+      <span class="wt-card-num" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span>
       <div class="wt-card-head">
         <span class="wt-card-field">${p.field}</span>
       </div>
@@ -202,9 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <p class="wt-section-lead">「何を完成させたか」より、「今、何を作っているか」の方が、たぶん私たちらしい。</p>
           <div class="wt-making-list">
             ${byStatus('making')
-              .map(
-                (p, i) => `
-              <a class="wt-making-card" href="${p.href || '#wt-projects-' + p.id}">
+              .map((p, i) => {
+                const tag = p.href ? 'a' : 'div';
+                const hrefAttr = p.href ? ` href="${p.href}"` : '';
+                const delay = ((i % 6) * 0.06).toFixed(2);
+                return `
+              <${tag} class="wt-making-card wt-reveal"${hrefAttr} style="--reveal-delay:${delay}s">
                 <div class="wt-making-top">
                   <span class="wt-card-field">${p.field}</span>
                   ${statusDots(p.status)}
@@ -212,8 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3>${p.title}</h3>
                 <p>${p.desc}</p>
                 ${ingredientChips(p.ingredients)}
-              </a>`,
-              )
+              </${tag}>`;
+              })
               .join('')}
           </div>
         </section>
@@ -360,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // reveal WHY TOAST steps as they scroll into view
   const steps = layer.querySelectorAll('.wt-why-step');
-  const io = new IntersectionObserver(
+  const stepObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) e.target.classList.add('is-visible');
@@ -368,5 +372,20 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     { threshold: 0.35 },
   );
-  steps.forEach((s) => io.observe(s));
+  steps.forEach((s) => stepObserver.observe(s));
+
+  // fade+rise project cards into view as the user scrolls (Base stays calm, cards bring motion)
+  const cards = layer.querySelectorAll('.wt-reveal');
+  const cardObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-visible');
+          cardObserver.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
+  );
+  cards.forEach((c) => cardObserver.observe(c));
 });
