@@ -224,11 +224,15 @@ Supabaseを使った WORLD RECORD 機能あり。
   - CSS / JS 読み込み
 
 - game-data.js
-  - 元の各画面データ / セクション生成
+  - 各画面(id単位)の最終的な表示内容。1セクション = 1行のテンプレートリテラル。
+  - 以前はここに書いた内容をquality-pass.js/polish.js/gameplay.js/realistic.jsが
+    実行時に正規表現やquerySelectorで上書き・削除していたが、現在は最終的な表示内容を
+    直接ここに書く方式に統一した（変更点はgit historyの「Consolidate 4-layer patch
+    structure」コミットを参照）。
 
 - realistic.js
-  - 企業サイト化
-  - ヘッダー / パンくず / トップ
+  - 企業サイトの共通ヘッダー/パンくず/`.portal-wrap`のテンプレート化（IDリスト駆動、game-data.jsの
+    各セクションを実行時にラップする）
   - サイト内検索
 
 - realistic.css
@@ -239,30 +243,29 @@ Supabaseを使った WORLD RECORD 機能あり。
   - トラップ記録
   - 移動ボタン
   - 正式ラン判定
-  - 各種ゲーム挙動
+  - アンケートのスキップ用チェックボックスの挙動（要素自体はgame-data.js側の静的HTML）
 
 - gameplay.css
   - ゲーム挙動系UI
 
-- quality-pass.js
-  - メタ台詞除去
-  - 実在サイトっぽい文言への差し替え
-  - 企業プロジェクト一覧
-  - FAQルート調整
-
 - quality-pass.css
-  - プロジェクト / 内部ページの品質調整
+  - プロジェクト / 内部ページの品質調整用CSS（対応するquality-pass.jsは統合済みで削除済み）
 
-- polish-20260919.js
-  - 成果物ビジュアル
-  - プロジェクトカードの仕上げ
-  - 会員サービスの文脈表示
+- polish.js
+  - プロジェクトカードのアーティファクト表示、会員サービス文脈のbodyクラス切り替え、
+    キーボードフォーカス時のアクセシビリティ対応（旧polish-20260919.jsをリネーム、
+    内容の大部分はgame-data.jsへ統合済み）
 
-- polish-20260919.css
+- polish.css
   - 成果物・レスポンシブ・最終UI調整
 
 - leaderboard.js / leaderboard.css
   - Supabase WORLD RECORD
+
+- scripts/bump-version.js
+  - index.html内の全`?v=`キャッシュバスターを一括更新するヘルパー。
+    `node scripts/bump-version.js [バージョン文字列]`（省略時は今日の日付）。
+    ファイルを更新したら、手で9箇所書き換える代わりにこれを実行する。
 
 - assets/
   - grid-rogue.webp
