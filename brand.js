@@ -18,20 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
       playable: true,
     },
     {
-      id: 'random-roguelike',
-      title: 'ランダム移動ローグライク（仮）',
-      field: 'GAME',
-      status: 'making',
-      desc: '移動方向がランダムに決まる、運と判断が入り混じるダンジョン探索ローグライク。ドット絵とスロット風の戦闘演出を自作中。',
-      ingredients: ['Roguelike', 'Pixel Art', 'Game Design', 'Vanilla JS'],
-    },
-    {
       id: 'grid-rogue',
       title: 'Grid Rogue',
       field: 'PLAY',
       status: 'making',
-      desc: 'マス目を進み、敵を倒し、コインとアイテムを集めるシンプルなローグライク。少ない操作で判断が積み重なる設計。',
-      ingredients: ['Roguelike', 'Web', 'Game Design'],
+      desc: '移動方向がランダムに決まる、運と判断が入り混じるダンジョン探索ローグライク。ドット絵とスロット風の戦闘演出を自作中。',
+      ingredients: ['Roguelike', 'Pixel Art', 'Game Design', 'Vanilla JS'],
       image: 'assets/grid-rogue.webp',
     },
     {
