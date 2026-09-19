@@ -124,7 +124,13 @@ home.innerHTML=header+`
 
 const searchIndex=[
 {title:'City Techno',desc:'街の映像認識と音を組み合わせる映像・音楽プロジェクト。',href:'#service',words:['city techno','街','テクノ','映像','画像認識']},
-{title:'Grid Rogue',desc:'Webベースのローグライクゲーム。',href:'#service',words:['grid rogue','ゲーム','ローグライク']},\n{title:'Kecak / Looper',desc:'声やリズムを重ねるループ型の音楽プロジェクト。',href:'#service',words:['kecak','looper','ケチャ','ルーパー','音楽','ループ']},\n{title:'Taxi Demand Model',desc:'鉄道運休や天気などからタクシー需要を読むデータモデル。',href:'#service',words:['taxi','タクシー','需要','鉄道運休','天気']},\n{title:'Warehouse Gym',desc:'車で入れる倉庫型トレーニング拠点の構想。',href:'#service',words:['warehouse','gym','倉庫','ジム','トレーニング']},\n{title:'Mission Log',desc:'音声・動画・日時を残す個人ログの研究。',href:'#service',words:['mission log','ログ','記録','音声','動画']},\n{title:'Shape Game',desc:'描いた図形の重心を使って進む物理ゲーム。',href:'#service',words:['shape','図形','重心','物理','ゲーム']},\n{title:'Pictogram Project',desc:'言葉がなくても必要なことを指して伝えるピクトグラム実験。',href:'#service',words:['pictogram','ピクトグラム','アイコン','コミュニケーション']},
+{title:'Grid Rogue',desc:'Webベースのローグライクゲーム。',href:'#service',words:['grid rogue','ゲーム','ローグライク']},
+{title:'Kecak / Looper',desc:'声やリズムを重ねるループ型の音楽プロジェクト。',href:'#service',words:['kecak','looper','ケチャ','ルーパー','音楽','ループ']},
+{title:'Taxi Demand Model',desc:'鉄道運休や天気などからタクシー需要を読むデータモデル。',href:'#service',words:['taxi','タクシー','需要','鉄道運休','天気']},
+{title:'Warehouse Gym',desc:'車で入れる倉庫型トレーニング拠点の構想。',href:'#service',words:['warehouse','gym','倉庫','ジム','トレーニング']},
+{title:'Mission Log',desc:'音声・動画・日時を残す個人ログの研究。',href:'#service',words:['mission log','ログ','記録','音声','動画']},
+{title:'Shape Game',desc:'描いた図形の重心を使って進む物理ゲーム。',href:'#service',words:['shape','図形','重心','物理','ゲーム']},
+{title:'Pictogram Project',desc:'言葉がなくても必要なことを指して伝えるピクトグラム実験。',href:'#service',words:['pictogram','ピクトグラム','アイコン','コミュニケーション']},
 {title:'Weekly Budget',desc:'週単位の予算管理ウィジェット。',href:'#service',words:['weekly budget','予算','ウィジェット']},
 {title:'マイページ',desc:'会員情報、利用状況、登録情報を確認できます。',href:'#mypage',words:['マイページ','会員情報','登録情報','プロフィール','住所','名前']},
 {title:'契約・料金',desc:'現在の契約内容、料金、次回更新日を確認できます。',href:'#contract',words:['契約','料金','月額','プラン','更新','請求']},
