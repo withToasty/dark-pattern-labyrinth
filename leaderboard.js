@@ -49,7 +49,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     refreshBoard(board);
 
     const input=panel.querySelector('input');const btn=panel.querySelector('button');const status=panel.querySelector('.lb-status');
-    btn.addEventListener('click',async()=>{
+    const alreadySubmitted=sessionStorage.getItem('dp-run-submitted')==='1';
+    if(result.validRun===false){
+      input.disabled=true;btn.disabled=true;btn.textContent='ランキング対象外';
+      status.textContent='ランキング登録は、最初の画面から開始してクリアした記録のみ対象です。';
+    }else if(alreadySubmitted){
+      input.disabled=true;btn.disabled=true;btn.textContent='登録済み';
+      status.textContent='このプレイの記録は登録済みです。';
+    }
+    btn.addEventListener('click',async()=>{if(result.validRun===false||sessionStorage.getItem('dp-run-submitted')==='1')return;
       const name=input.value.trim();
       if(!name){status.textContent='名前を入力してください。';input.focus();return;}
       btn.disabled=true;status.textContent='記録を送信中…';
@@ -59,7 +67,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         if(!r.ok)throw new Error(await r.text());
         const rank=await getRank(payload.time_ms);
         status.textContent=`記録しました。現在 ${rank}位です。`;
-        input.disabled=true;btn.textContent='登録済み';
+        sessionStorage.setItem('dp-run-submitted','1');input.disabled=true;btn.disabled=true;btn.textContent='登録済み';
         await refreshBoard(board);
       }catch(e){
         status.textContent='送信できませんでした。少し待ってもう一度試してください。';
