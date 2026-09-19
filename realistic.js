@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 const immersiveIds=['home','service','jointrap','footer','mypage','points','coupon','history','settings','profile','notice','contract','upgrade','payment','other','other2','receipt','namechange','pause','pausetrap','faq1','faqanswer','retain1','other3','applydoor','boss1','resetloop','boss2','closeTrap','boss3','boss4','boss5','reasontrap','boss6','runnerCaught','boss7','wrongLearned','boss8','chat1','chat2','chat3','callback','boss9','surveytrap','boss10','stayfinal','fakeend','mail','lastlogin'];
 
 const pageNames={
-home:'会員向けサービス',service:'サービス',jointrap:'新規会員登録',footer:'企業情報',mypage:'マイページ',
+home:'ホーム',service:'事業・プロジェクト',jointrap:'新規会員登録',footer:'企業情報',mypage:'マイページ',
 points:'ポイント',coupon:'会員特典・クーポン',history:'利用履歴',settings:'各種設定',profile:'プロフィール設定',
 notice:'通知設定',contract:'契約・料金',upgrade:'プラン変更',payment:'支払い方法',other:'その他のお手続き',
 other2:'各種お手続き',receipt:'領収書',namechange:'名義変更',pause:'一時休止',pausetrap:'一時休止',
@@ -124,7 +124,7 @@ home.innerHTML=header+`
 
 const searchIndex=[
 {title:'City Techno',desc:'街の映像認識と音を組み合わせる映像・音楽プロジェクト。',href:'#service',words:['city techno','街','テクノ','映像','画像認識']},
-{title:'Grid Rogue',desc:'Webベースのローグライクゲーム。',href:'#service',words:['grid rogue','ゲーム','ローグライク']},
+{title:'Grid Rogue',desc:'Webベースのローグライクゲーム。',href:'#service',words:['grid rogue','ゲーム','ローグライク']},\n{title:'Kecak / Looper',desc:'声やリズムを重ねるループ型の音楽プロジェクト。',href:'#service',words:['kecak','looper','ケチャ','ルーパー','音楽','ループ']},\n{title:'Taxi Demand Model',desc:'鉄道運休や天気などからタクシー需要を読むデータモデル。',href:'#service',words:['taxi','タクシー','需要','鉄道運休','天気']},\n{title:'Warehouse Gym',desc:'車で入れる倉庫型トレーニング拠点の構想。',href:'#service',words:['warehouse','gym','倉庫','ジム','トレーニング']},\n{title:'Mission Log',desc:'音声・動画・日時を残す個人ログの研究。',href:'#service',words:['mission log','ログ','記録','音声','動画']},\n{title:'Shape Game',desc:'描いた図形の重心を使って進む物理ゲーム。',href:'#service',words:['shape','図形','重心','物理','ゲーム']},\n{title:'Pictogram Project',desc:'言葉がなくても必要なことを指して伝えるピクトグラム実験。',href:'#service',words:['pictogram','ピクトグラム','アイコン','コミュニケーション']},
 {title:'Weekly Budget',desc:'週単位の予算管理ウィジェット。',href:'#service',words:['weekly budget','予算','ウィジェット']},
 {title:'マイページ',desc:'会員情報、利用状況、登録情報を確認できます。',href:'#mypage',words:['マイページ','会員情報','登録情報','プロフィール','住所','名前']},
 {title:'契約・料金',desc:'現在の契約内容、料金、次回更新日を確認できます。',href:'#contract',words:['契約','料金','月額','プラン','更新','請求']},
