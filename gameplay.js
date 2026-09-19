@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let finished = false;
 
   const idFromHash = () => location.hash.replace('#', '') || 'start';
+  const isBrandPage = (id) => id.startsWith('wt-');
   const fmt = (ms) => {
     const s = Math.max(0, Math.round(ms / 1000));
     const m = Math.floor(s / 60);
@@ -87,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   const record = (id) => {
-    if (!state.started || id === 'start') return;
+    if (!state.started || id === 'start' || isBrandPage(id)) return;
     state.views++;
     if (state.seen.has(id)) state.revisits++;
     else state.seen.add(id);
@@ -131,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionStorage.removeItem('dp-run-submitted');
   });
 
-  if (idFromHash() !== 'start' && idFromHash() !== 'trueend') {
+  if (idFromHash() !== 'start' && idFromHash() !== 'trueend' && !isBrandPage(idFromHash())) {
     if (!restore()) start(false);
   }
   record(idFromHash());

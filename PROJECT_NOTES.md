@@ -333,4 +333,40 @@ index.htmlにも noindex / nofollow 等を設定。
 - TRUE END以外でダークパターン名を説明していないか
 - GitHub Pagesのデプロイが成功したか
 
+---
+
+## 14. WITH TOAST ブランドレイヤー（2026-09-20〜）
+
+このサイトの「顔」は、`docs/WITH_TOAST_BRAND.md` を正本とするWITH TOASTのブランドサイトに変わった。
+「解約できません。2」は消えておらず、WITH TOASTのPROJECTS内の1プロジェクトとして残る。
+
+### 構造
+
+- `brand.css` / `brand.js` が新設。`.wt-layer`（`id="wt-layer"`）という
+  画面全体を覆う固定レイヤーの中に、WITH TOASTの各ページ（`.wt-page`、
+  `id="wt-home" / "wt-now-making" / "wt-projects" / "wt-experiments" /
+  "wt-ideas" / "wt-with" / "wt-why"`）をhashルーティングで表示する。
+- ゲーム本体（`.app` / `#start` 以下すべて）は**無改造**。
+  `.page:target` が何かにマッチした瞬間だけ `.app` が表示され、
+  `.wt-layer` は自動的に隠れる（index.html内のCSSで制御）。
+  何もマッチしていない（トップ訪問時）は `.wt-layer` が既定表示。
+- PROJECTSページの「解約できません。2」カードから `#start` へ飛ぶと、
+  今まで通りのゲーム体験（タイマー・移動する解約ボタン・リーダーボード等）に入る。
+- `gameplay.js` は `wt-` で始まるIDを「ゲームのページではない」とみなし、
+  WITH TOASTを回遊してもタイマーや正式ラン判定が誤発火しないようにしている
+  （`isBrandPage()`）。
+
+### プロジェクトデータ
+
+`brand.js` 内の `PROJECTS` 配列がNOW MAKING / PROJECTS / EXPERIMENTS / IDEASの
+出し分け元。各プロジェクトは `status`（idea / experiment / making / done）を持ち、
+この値でどのページに出るか、ステータスドットの表示が決まる。
+
+### 隠し色（Anniversary Indigo #202688）の使用箇所
+
+- プロジェクトカード右上の番号（`.wt-card-num`）
+- footerの小さな点（hoverで色が変わる。`title`属性に日付のみ）
+
+これ以上は増やさない。ブランドの主要色として使わないこと。
+
 このファイルは、設計判断が変わったら随時更新する。
