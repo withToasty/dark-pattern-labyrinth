@@ -22,20 +22,38 @@ v0.1では、動画そのものを直接解析する前に、
 つまり、
 
 ```
-video
+video / photo
   ↓
 object / scene detection
   ↓
 detections.json
   ↓
-WORLD TO TECHNO engine  ← いま作る核
+WORLD TO TECHNO engine
   ↓
 arrangement.json
   ↓
-sound generation / DAW / renderer
+sample selection / human finish
   ↓
 video + techno
 ```
+
+## Creative direction
+
+- BGMとして流れて違和感がないことを優先する
+- 曲として派手にかっこいいことは必須ではない
+- 直訳できるものはなるべく直訳する
+- 1つの対象に複数の音候補を持てるようにする
+- 最初はサンプル音源を使う
+- 8割自動生成 + 人間が仕上げる
+- 認識枠は音が鳴る瞬間だけ表示する
+- 冒頭で主要音を短く提示し、「TOAST STUDIO」を表示する
+
+## First piece
+
+第一作は**池袋の写真**から始める。
+静止画でルールと演出を確認した後、池袋の動画へ発展させる。
+
+詳細: [FIRST_PIECE_IKEBUKURO.md](docs/FIRST_PIECE_IKEBUKURO.md)
 
 ## Example
 
@@ -52,10 +70,10 @@ video + techno
 
 変換例:
 
-- car → bass / low percussion
-- bicycle → bell / high percussion
-- construction → industrial kick / noise
-- sky → visual layer / ambient space
+- car → engine / brake / tire friction
+- bicycle → bell / chain / tire roll
+- construction → metal hit / drill / machine hum
+- sky → ambient / visual space
 
 ## Run
 
@@ -75,14 +93,18 @@ python -m world_to_techno.cli examples/detections.json
 - ラベルを音の役割へマッピング
 - confidence / screen areaから強さを決める
 - BPM・レイヤー構成をJSONで出す
+- 1対象に複数のサンプル候補を保持する
 
 ### 次
+- 写真版プロトタイプ
+- サンプル音源の選択
+- 認識枠の同期表示
+- TOAST STUDIOオープニング
 - 動画から自動で物体検出
 - 対象をフレーム間で追跡
-- 画面上に認識枠を描画
 - 実際の音源を生成
 - 動画と音を同期して書き出す
-- 飯テクノ / 祭り / 風景写真などへ展開
+- 飯テクノ / 祭り / 風景などへ展開
 
 ## Project philosophy
 
@@ -100,12 +122,14 @@ python -m world_to_techno.cli examples/detections.json
 - [PIPELINE.md](docs/PIPELINE.md)
 - [SOUND_MAPPING.md](docs/SOUND_MAPPING.md)
 - [DECISIONS.md](docs/DECISIONS.md)
+- [FIRST_PIECE_IKEBUKURO.md](docs/FIRST_PIECE_IKEBUKURO.md)
 
 ## Ingredients
 
-- Video
+- Photo / Video
 - Computer Vision
 - Rule-based Mapping
+- Sample Sound
+- Human Finishing
 - Techno
 - City / Food / Festival / Landscape
-
