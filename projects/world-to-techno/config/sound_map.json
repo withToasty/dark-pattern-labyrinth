@@ -1,0 +1,19 @@
+{
+  "car": {"role": "bass", "pattern": "steady"},
+  "truck": {"role": "sub_bass", "pattern": "heavy"},
+  "bicycle": {"role": "high_percussion", "pattern": "sparse"},
+  "person": {"role": "rhythm", "pattern": "walking"},
+  "construction": {"role": "industrial_percussion", "pattern": "repetitive"},
+  "train": {"role": "sequence", "pattern": "repetitive"},
+  "railroad_crossing": {"role": "high_percussion", "pattern": "repetitive"},
+  "ambulance": {"role": "lead", "pattern": "siren"},
+  "police_car": {"role": "lead", "pattern": "siren"},
+  "water": {"role": "texture", "pattern": "flow"},
+  "river": {"role": "texture", "pattern": "flow"},
+  "temple": {"role": "accent", "pattern": "resonant"},
+  "sky": {"role": "visual_space", "pattern": "ambient"},
+  "building": {"role": "pad", "pattern": "sustained"},
+  "traffic_light": {"role": "clock", "pattern": "pulse"},
+  "hamburger": {"role": "stack", "pattern": "layered"},
+  "festival": {"role": "polyrhythm", "pattern": "cyclic"}
+}
