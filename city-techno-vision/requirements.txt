@@ -4,3 +4,9 @@ PyYAML>=6.0
 # needed only for open-vocabulary detection (YOLO-World models' set_classes()),
 # see README "open-vocabulary detection"
 clip @ git+https://github.com/openai/CLIP.git
+# needed only for fence detection (--fence-model / FenceDetector), see
+# README "fence detection" and src/fence_detector.py
+torch
+torchvision
+transformers
+pillow
