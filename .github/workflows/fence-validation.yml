@@ -1,0 +1,98 @@
+name: city-techno-vision fence validation
+
+# Manual-only: runs the real SegFormer fence-detection path end-to-end on a
+# GitHub Actions runner, where huggingface.co is reachable (unlike the Claude
+# sandbox, which blocks it -- see city-techno-vision/STATUS.md).
+on:
+  workflow_dispatch:
+    inputs:
+      image_url:
+        description: "URL of a street-scene photo containing a fence (optional)"
+        required: false
+        default: ""
+      image_path:
+        description: "Path, relative to repo root, to a photo already in the checkout (optional)"
+        required: false
+        default: ""
+
+jobs:
+  validate-fence-detection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (CPU-only torch)
+        working-directory: city-techno-vision
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          pip install -r requirements.txt
+
+      - name: Download SegFormer fence model
+        run: |
+          python - <<'EOF'
+          from transformers import SegformerImageProcessor, SegformerForSemanticSegmentation
+          model_id = "nvidia/segformer-b0-finetuned-cityscapes-1024-1024"
+          SegformerImageProcessor.from_pretrained(model_id)
+          SegformerForSemanticSegmentation.from_pretrained(model_id)
+          print(f"model ready: {model_id}")
+          EOF
+
+      - name: Resolve test image
+        id: image
+        env:
+          IMAGE_URL: ${{ github.event.inputs.image_url }}
+          IMAGE_PATH: ${{ github.event.inputs.image_path }}
+        run: |
+          mkdir -p /tmp/fence-input
+          if [ -n "$IMAGE_PATH" ]; then
+            cp "$IMAGE_PATH" /tmp/fence-input/photo.jpg
+          elif [ -n "$IMAGE_URL" ]; then
+            curl -sSL "$IMAGE_URL" -o /tmp/fence-input/photo.jpg
+          else
+            echo "::warning::Blocked: no test image provided. Re-run with image_url or image_path set to a street-scene photo containing a fence."
+            echo "blocked=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "blocked=false" >> "$GITHUB_OUTPUT"
+
+      - name: Run detect.py (general detector + fence)
+        if: steps.image.outputs.blocked == 'false'
+        working-directory: city-techno-vision
+        run: |
+          python detect.py \
+            --image /tmp/fence-input/photo.jpg \
+            --output-dir /tmp/fence-output \
+            --fence-model nvidia/segformer-b0-finetuned-cityscapes-1024-1024
+
+      - name: Summarize result
+        if: always()
+        run: |
+          echo "model: nvidia/segformer-b0-finetuned-cityscapes-1024-1024"
+          if [ "${{ steps.image.outputs.blocked }}" = "true" ]; then
+            echo "status: blocked (no test image provided)"
+          elif [ -f /tmp/fence-output/detections.json ]; then
+            python - <<'EOF'
+          import json
+          with open("/tmp/fence-output/detections.json") as f:
+              result = json.load(f)
+          fence = [d for d in result["detections"] if d["label"] == "fence"]
+          print(f"fence detections: {len(fence)}")
+          print(f"total detections: {len(result['detections'])}")
+          print("status: success")
+          print("output dir: /tmp/fence-output")
+          EOF
+          else
+            echo "status: failed (see previous step logs)"
+          fi
+
+      - name: Upload artifacts
+        if: steps.image.outputs.blocked == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fence-validation-output
+          path: /tmp/fence-output/
