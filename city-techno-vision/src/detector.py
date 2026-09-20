@@ -74,7 +74,7 @@ class ObjectDetector:
 
     def __init__(
         self,
-        model_path: str = "yolov8n.pt",
+        model_path: str = "yolov8n-oiv7.pt",
         confidence_threshold: float = 0.25,
         classes: list[str] | None = None,
     ):

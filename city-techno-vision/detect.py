@@ -32,9 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default="output", help="directory for outputs (default: output/)")
     parser.add_argument(
         "--model",
-        default="yolov8n.pt",
-        help="Ultralytics model name or path to weights. Use an open-vocabulary "
-        "model (e.g. yolov8s-worldv2.pt) to enable --classes.",
+        default="yolov8n-oiv7.pt",
+        help="Ultralytics model name or path to weights (default: yolov8n-oiv7.pt, "
+        "trained on Open Images V7's 601 classes -- a superset of COCO's 80 that "
+        "also covers things like building/skyscraper/tree/window/door/billboard). "
+        "Use an open-vocabulary model (e.g. yolov8s-worldv2.pt) to enable --classes.",
     )
     parser.add_argument("--conf", type=float, default=0.25, help="confidence threshold (default: 0.25)")
     parser.add_argument(
