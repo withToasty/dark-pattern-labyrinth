@@ -218,59 +218,56 @@ Supabaseを使った WORLD RECORD 機能あり。
 
 ## 9. 主なファイル
 
-- index.html
-  - 外側のゲーム開始画面
-  - TRUE END
-  - CSS / JS 読み込み
+ルート直下にCSS/JSを並べると見通しが悪いので、`src/game/`（解約できません。2 本体）と
+`src/brand/`（WITH TOASTのブランドレイヤー）に分けている。
 
-- game-data.js
+- index.html
+  - 外側のゲーム開始画面 / TRUE END
+  - `src/game/*` `src/brand/*` の読み込み
+
+- src/game/game-data.js
   - 各画面(id単位)の最終的な表示内容。1セクション = 1行のテンプレートリテラル。
   - 以前はここに書いた内容をquality-pass.js/polish.js/gameplay.js/realistic.jsが
     実行時に正規表現やquerySelectorで上書き・削除していたが、現在は最終的な表示内容を
     直接ここに書く方式に統一した（変更点はgit historyの「Consolidate 4-layer patch
     structure」コミットを参照）。
 
-- realistic.js
+- src/game/realistic.js / realistic.css
   - 企業サイトの共通ヘッダー/パンくず/`.portal-wrap`のテンプレート化（IDリスト駆動、game-data.jsの
     各セクションを実行時にラップする）
   - サイト内検索
 
-- realistic.css
-  - 企業サイト基本デザイン
-
-- gameplay.js
-  - タイマー
-  - トラップ記録
-  - 移動ボタン
-  - 正式ラン判定
+- src/game/gameplay.js / gameplay.css
+  - タイマー / トラップ記録 / 移動ボタン / 正式ラン判定
   - アンケートのスキップ用チェックボックスの挙動（要素自体はgame-data.js側の静的HTML）
+  - `wt-` で始まるIDはゲームページ扱いしない（WITH TOAST側を回遊してもタイマー等が
+    誤発火しないためのガード。`isBrandPage()`）
 
-- gameplay.css
-  - ゲーム挙動系UI
-
-- quality-pass.css
+- src/game/quality-pass.css
   - プロジェクト / 内部ページの品質調整用CSS（対応するquality-pass.jsは統合済みで削除済み）
 
-- polish.js
+- src/game/polish.js / polish.css
   - プロジェクトカードのアーティファクト表示、会員サービス文脈のbodyクラス切り替え、
     キーボードフォーカス時のアクセシビリティ対応（旧polish-20260919.jsをリネーム、
     内容の大部分はgame-data.jsへ統合済み）
 
-- polish.css
-  - 成果物・レスポンシブ・最終UI調整
-
-- leaderboard.js / leaderboard.css
+- src/game/leaderboard.js / leaderboard.css
   - Supabase WORLD RECORD
+
+- src/brand/brand.js / brand.css
+  - WITH TOASTのブランドレイヤー本体。詳細は14章参照。
 
 - scripts/bump-version.js
   - index.html内の全`?v=`キャッシュバスターを一括更新するヘルパー。
     `node scripts/bump-version.js [バージョン文字列]`（省略時は今日の日付）。
-    ファイルを更新したら、手で9箇所書き換える代わりにこれを実行する。
+    ファイルを更新したら、手で書き換える代わりにこれを実行する。
 
 - assets/
   - grid-rogue.webp
   - weekly-budget.webp
   - city-techno.webp
+  - （`src/game/`・`src/brand/`どちらのJSからも`assets/...`という相対パスで参照するため、
+    ルート直下のまま。index.htmlがルートにある限りこれで解決できる）
 
 ---
 
@@ -342,7 +339,7 @@ index.htmlにも noindex / nofollow 等を設定。
 
 ### 構造
 
-- `brand.css` / `brand.js` が新設。`.wt-layer`（`id="wt-layer"`）という
+- `src/brand/brand.css` / `src/brand/brand.js` が新設。`.wt-layer`（`id="wt-layer"`）という
   画面全体を覆う固定レイヤーの中に、WITH TOASTの各ページ（`.wt-page`、
   `id="wt-home" / "wt-now-making" / "wt-projects" / "wt-experiments" /
   "wt-ideas" / "wt-with" / "wt-why"`）をhashルーティングで表示する。
@@ -358,7 +355,7 @@ index.htmlにも noindex / nofollow 等を設定。
 
 ### プロジェクトデータ
 
-`brand.js` 内の `PROJECTS` 配列がNOW MAKING / PROJECTS / EXPERIMENTS / IDEASの
+`src/brand/brand.js` 内の `PROJECTS` 配列がNOW MAKING / PROJECTS / EXPERIMENTS / IDEASの
 出し分け元。各プロジェクトは `status`（idea / experiment / making / done）を持ち、
 この値でどのページに出るか、ステータスドットの表示が決まる。
 
