@@ -105,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const nav = () => `
     <nav class="wt-nav">
       <a class="wt-wordmark" href="#wt-home">WITH<span class="wt-dot">.</span>TOAST</a>
+      <button class="wt-nav-toggle" type="button" aria-expanded="false" aria-label="メニュー">
+        <span></span><span></span><span></span>
+      </button>
       <div class="wt-nav-links">
         <a href="#wt-now-making">NOW MAKING</a>
         <a href="#wt-projects">PROJECTS</a>
@@ -159,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------------- WT HOME ----------------
   const wtHome = () => `
-    <section class="wt-page" id="wt-home">
+    <section id="wt-home">
       ${nav()}
       <div class="wt-shell">
         <header class="wt-hero">
@@ -361,6 +364,31 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   markCurrentNav();
   window.addEventListener('hashchange', markCurrentNav);
+
+  // hamburger menu (mobile): toggle open, close on link click or outside click
+  const closeNavMenu = (nav) => {
+    nav.querySelector('.wt-nav-links')?.classList.remove('is-open');
+    const toggle = nav.querySelector('.wt-nav-toggle');
+    toggle?.classList.remove('is-open');
+    toggle?.setAttribute('aria-expanded', 'false');
+  };
+  layer.addEventListener('click', (e) => {
+    const toggle = e.target.closest('.wt-nav-toggle');
+    if (toggle) {
+      const nav = toggle.closest('.wt-nav');
+      const links = nav.querySelector('.wt-nav-links');
+      const open = links.classList.toggle('is-open');
+      toggle.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      return;
+    }
+    const link = e.target.closest('.wt-nav-links a');
+    if (link) closeNavMenu(link.closest('.wt-nav'));
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.wt-nav')) return;
+    layer.querySelectorAll('.wt-nav').forEach(closeNavMenu);
+  });
 
   // reveal WHY TOAST steps as they scroll into view
   const steps = layer.querySelectorAll('.wt-why-step');
