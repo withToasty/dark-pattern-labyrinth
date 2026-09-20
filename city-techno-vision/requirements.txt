@@ -1,3 +1,6 @@
 ultralytics>=8.0.0
 opencv-python>=4.8.0
 PyYAML>=6.0
+# needed only for open-vocabulary detection (YOLO-World models' set_classes()),
+# see README "open-vocabulary detection"
+clip @ git+https://github.com/openai/CLIP.git
