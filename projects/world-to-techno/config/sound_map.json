@@ -1,19 +1,87 @@
 {
-  "car": {"role": "bass", "pattern": "steady"},
-  "truck": {"role": "sub_bass", "pattern": "heavy"},
-  "bicycle": {"role": "high_percussion", "pattern": "sparse"},
-  "person": {"role": "rhythm", "pattern": "walking"},
-  "construction": {"role": "industrial_percussion", "pattern": "repetitive"},
-  "train": {"role": "sequence", "pattern": "repetitive"},
-  "railroad_crossing": {"role": "high_percussion", "pattern": "repetitive"},
-  "ambulance": {"role": "lead", "pattern": "siren"},
-  "police_car": {"role": "lead", "pattern": "siren"},
-  "water": {"role": "texture", "pattern": "flow"},
-  "river": {"role": "texture", "pattern": "flow"},
-  "temple": {"role": "accent", "pattern": "resonant"},
-  "sky": {"role": "visual_space", "pattern": "ambient"},
-  "building": {"role": "pad", "pattern": "sustained"},
-  "traffic_light": {"role": "clock", "pattern": "pulse"},
-  "hamburger": {"role": "stack", "pattern": "layered"},
-  "festival": {"role": "polyrhythm", "pattern": "cyclic"}
+  "car": {
+    "role": "bass",
+    "pattern": "steady",
+    "samples": ["engine_low", "brake_squeak", "tire_friction"]
+  },
+  "truck": {
+    "role": "sub_bass",
+    "pattern": "heavy",
+    "samples": ["diesel_engine", "air_brake", "heavy_tire"]
+  },
+  "bicycle": {
+    "role": "high_percussion",
+    "pattern": "sparse",
+    "samples": ["bell", "chain_click", "tire_roll"]
+  },
+  "person": {
+    "role": "rhythm",
+    "pattern": "walking",
+    "samples": ["footstep", "voice_chop", "cloth_rustle"]
+  },
+  "construction": {
+    "role": "industrial_percussion",
+    "pattern": "repetitive",
+    "samples": ["metal_hit", "drill_noise", "machine_hum"]
+  },
+  "train": {
+    "role": "sequence",
+    "pattern": "repetitive",
+    "samples": ["rail_clack", "brake", "motor_hum"]
+  },
+  "railroad_crossing": {
+    "role": "high_percussion",
+    "pattern": "repetitive",
+    "samples": ["crossing_bell"]
+  },
+  "ambulance": {
+    "role": "lead",
+    "pattern": "siren",
+    "samples": ["siren"]
+  },
+  "police_car": {
+    "role": "lead",
+    "pattern": "siren",
+    "samples": ["siren"]
+  },
+  "water": {
+    "role": "texture",
+    "pattern": "flow",
+    "samples": ["flow", "splash", "drip"]
+  },
+  "river": {
+    "role": "texture",
+    "pattern": "flow",
+    "samples": ["flow", "current"]
+  },
+  "temple": {
+    "role": "accent",
+    "pattern": "resonant",
+    "samples": ["bell", "wood_hit"]
+  },
+  "sky": {
+    "role": "visual_space",
+    "pattern": "ambient",
+    "samples": ["air_texture"]
+  },
+  "building": {
+    "role": "pad",
+    "pattern": "sustained",
+    "samples": ["room_tone", "low_hum"]
+  },
+  "traffic_light": {
+    "role": "clock",
+    "pattern": "pulse",
+    "samples": ["tick", "beep"]
+  },
+  "hamburger": {
+    "role": "stack",
+    "pattern": "layered",
+    "samples": ["bite", "wrapper", "ingredient_layer"]
+  },
+  "festival": {
+    "role": "polyrhythm",
+    "pattern": "cyclic",
+    "samples": ["hand_percussion", "chant", "clap"]
+  }
 }
