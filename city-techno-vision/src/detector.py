@@ -11,24 +11,13 @@ Two kinds of model are supported, selected by which weights you pass in:
   class list is fixed at training time.
 - A YOLO-World model (e.g. "yolov8s-worldv2.pt") is open-vocabulary:
   you hand it any list of words at runtime (`classes=[...]`) and it
-  looks for those instead. That's how "building", "sky", "cloud",
-  "fence" etc. become detectable without retraining anything -- it's
-  just a list of words, not a new model. The only real cost is a
-  one-time download of a CLIP text encoder the first time
-  `set_classes` runs (see README: "open-vocabulary detection").
+  looks for those instead.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from ultralytics import YOLO
-
-# A reasonably broad default vocabulary for street/city scenes, used
-# automatically when a YOLO-World model is loaded without an explicit
-# --classes override. Edit this list freely -- with a world model,
-# adding a word here costs nothing extra (no retraining, no new
-# download) once the one-time CLIP text encoder is cached locally.
 DEFAULT_CITY_CLASSES = [
     "car",
     "truck",
@@ -54,11 +43,7 @@ DEFAULT_CITY_CLASSES = [
 
 @dataclass
 class Detection:
-    """One detected object, in image pixel coordinates.
-
-    Coordinate system: origin at the image's top-left corner,
-    x increasing to the right, y increasing downward.
-    """
+    """One detected object, in image pixel coordinates."""
 
     id: int
     label: str
@@ -78,6 +63,8 @@ class ObjectDetector:
         confidence_threshold: float = 0.25,
         classes: list[str] | None = None,
     ):
+        from ultralytics import YOLO
+
         self.model = YOLO(model_path)
         self.confidence_threshold = confidence_threshold
 
@@ -111,3 +98,12 @@ class ObjectDetector:
                 )
             )
         return detections
+
+
+def merge_detections(*detection_lists: list[Detection]) -> list[Detection]:
+    """Concatenate detection lists, reassigning ids sequentially so none collide."""
+    merged: list[Detection] = []
+    for detections in detection_lists:
+        for det in detections:
+            merged.append(replace(det, id=len(merged) + 1))
+    return merged

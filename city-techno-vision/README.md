@@ -39,6 +39,7 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--model` | `yolov8n-oiv7.pt` | 使用するUltralytics YOLOモデル/重みファイル |
 | `--conf` | `0.25` | 検出の信頼度しきい値 |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
+| `--fence-model` | (なし) | fence用セマンティックセグメンテーションモデルのHugging Face model idまたはローカルパス（推奨: `nvidia/segformer-b0-finetuned-cityscapes-1024-1024`）。指定すると通常物体検出とは独立に fence 領域を検出して結果をマージする |
 
 ## モデルについて（Open Images V7 vs COCO）
 
@@ -54,51 +55,62 @@ street light, traffic signなど）が追加で検出できる。
 - 8クラスはOpen Images V7に存在しない（donut, frisbee, potted plant, skis,
   sports ball, cup, cow(→`Cattle`という別名で存在), cell phone）
 
-### 検出できないもの：sky / cloud / fence / road
+### fence の検出
 
-これらは**どの物体検出モデルを選んでも検出できない**。COCOにもOpen Images V7にも
-存在しない。理由はモデルの選択の問題ではなく、物体検出というタスクそのものの
-性質による：
+`fence` は通常の物体検出だけでは安定しないため、
+`src/fence_detector.py` の `FenceDetector` でセマンティックセグメンテーションを使う。
 
-- car・person・building のような「数えられる、輪郭がはっきりした物」は
-  bounding boxと相性がいい
-- sky・cloud・fence・road のような「画面のどこまでも広がる背景・領域」は
-  そもそも四角い枠で囲む発想に合わない
+採用モデル:
 
-これらを検出したい場合は、物体検出ではなく**セマンティックセグメンテーション**
-（画面を領域ごとに塗り分ける別の手法）が必要になる。今回は一旦保留。
+`nvidia/segformer-b0-finetuned-cityscapes-1024-1024`
+
+Cityscapes 19-class taxonomy の `fence` (class id 4) の確率マスクを取得し、
+
+```text
+fence probability mask
+→ threshold
+→ connected components
+→ bbox
+→ Detection(label="fence", ...)
+```
+
+として既存の JSON / YAML 出力に統合する。
+
+実行例:
+
+```
+python detect.py --image photo.jpg \
+  --fence-model nvidia/segformer-b0-finetuned-cityscapes-1024-1024
+```
+
+実モデル + 実写真による end-to-end 検証は GitHub Actions で成功済み。
+通常YOLO検出、SegFormer推論、`fence_mask.png`、fence bbox、
+annotated image、JSON/YAML出力まで確認している。
 
 ## 検出対象を増やす（open-vocabulary detection）
 
-上記に加えてさらに独自の単語を検出したい場合は、**YOLO-World**という
-open-vocabularyモデルを使う。
+さらに独自の単語を検出したい場合は、YOLO-World を使う。
 
 ```
 python detect.py --image photo.jpg --model yolov8s-worldv2.pt
 ```
 
 `--classes`を省略すると、`src/detector.py`の`DEFAULT_CITY_CLASSES`
-（街の風景向けに用意した単語リスト）が自動的に使われる。特定の単語だけに
-絞りたい場合はこう指定する：
+（街の風景向け単語リスト）が使われる。
 
 ```
 python detect.py --image photo.jpg --model yolov8s-worldv2.pt \
   --classes "building,car,tree"
 ```
 
-**重要**: 検出したい単語を増やすこと自体にコストはかからない（再学習も追加の
-ダウンロードも不要。ただの単語リストの書き換え）。ただし初回だけ、単語を理解するための
-CLIPテキストエンコーダー（約350MB、`openaipublic.azureedge.net`から取得）を追加で
-ダウンロードする必要がある。これは`pip install -r requirements.txt`で入る`clip`パッケージが
-初回`--classes`使用時に自動で取得する。
-
 ## 出力
 
 `--output-dir` に以下を出力する。
 
-- `<元画像名>_detected.<拡張子>` — bounding box・label・confidenceを描画した画像
+- `<元画像名>_detected.<拡張子>`
 - `detections.json`
 - `detections.yaml`
+- fence検出時: `fence_mask.png`
 
 ### 座標系
 
@@ -133,24 +145,26 @@ CLIPテキストエンコーダー（約350MB、`openaipublic.azureedge.net`か�
 
 ```
 city-techno-vision/
-  detect.py           CLIエントリポイント
+  detect.py
   src/
-    detector.py        YOLOモデルのラッパー。画像 → Detection のリスト
-    visualize.py        Detection を元画像に描画する
-    export.py           Detection を JSON / YAML に変換する
+    detector.py
+    fence_detector.py
+    visualize.py
+    export.py
+  tests/
+    test_fence_detector.py
   requirements.txt
 ```
 
 ## 既知の制約
 
-`--classes`（open-vocabulary detection）は、開発時のサンドボックス環境では
-`openaipublic.azureedge.net`への接続がネットワークポリシーでブロックされていたため、
-実際の検出結果までは確認できていない。デフォルトの`yolov8n-oiv7.pt`での検出・描画・
-JSON/YAML出力は実画像で動作確認済み。通常のネット環境であれば`--classes`も
-問題なく動くはず。
+`--classes`（YOLO-World）は、開発時のサンドボックスではCLIPの初回取得先が
+ネットワークポリシーでブロックされ、実検出までは未確認。
+
+fence用SegFormerはClaude sandboxではHugging Faceへの接続がブロックされたが、
+GitHub Actions上で実モデル + 実写真の推論を確認済み。
 
 ## スコープ外
 
-このリポジトリの `Tk-work` フォルダには一切触れていない（読み込み・編集・書き込み・
-移動・削除・追加のいずれも行っていない）。このプロジェクトは完全に独立したフォルダ
-として作成している。
+`Tk-work` には触れない。
+音生成、BPM、MIDI、物体→音のマッピングは別プロジェクトで扱う。

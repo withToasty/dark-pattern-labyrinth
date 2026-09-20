@@ -21,8 +21,9 @@ from pathlib import Path
 
 import cv2
 
-from src.detector import DEFAULT_CITY_CLASSES, ObjectDetector
+from src.detector import DEFAULT_CITY_CLASSES, ObjectDetector, merge_detections
 from src.export import build_result, write_json, write_yaml
+from src.fence_detector import FenceDetector, mask_to_detections
 from src.visualize import draw_detections
 
 
@@ -39,6 +40,15 @@ def parse_args() -> argparse.Namespace:
         "Use an open-vocabulary model (e.g. yolov8s-worldv2.pt) to enable --classes.",
     )
     parser.add_argument("--conf", type=float, default=0.25, help="confidence threshold (default: 0.25)")
+    parser.add_argument(
+        "--fence-model",
+        default=None,
+        help="Hugging Face model id or local path for the fence-segmentation "
+        "model (default when enabled: nvidia/segformer-b0-finetuned-cityscapes-"
+        "1024-1024, see src/fence_detector.py). Adds an independent "
+        "fence-detection path merged into the same detections list. Omit to "
+        "run the general detector only (default).",
+    )
     parser.add_argument(
         "--classes",
         default=None,
@@ -73,6 +83,21 @@ def main() -> None:
 
     detector = ObjectDetector(model_path=args.model, confidence_threshold=args.conf, classes=classes)
     detections = detector.detect(str(image_path))
+
+    if args.fence_model:
+        try:
+            fence_detector = FenceDetector(model_path=args.fence_model)
+            fence_mask = fence_detector.predict_mask(image)
+        except RuntimeError as exc:
+            raise SystemExit(f"fence detection failed: {exc}") from exc
+        fence_detections = mask_to_detections(
+            fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
+        )
+        detections = merge_detections(detections, fence_detections)
+        mask_path = output_dir / "fence_mask.png"
+        cv2.imwrite(str(mask_path), (fence_mask * 255).astype("uint8"))
+        print(f"fence detections   -> {len(fence_detections)}")
+        print(f"fence mask         -> {mask_path}")
 
     annotated = draw_detections(image, detections)
     annotated_path = output_dir / f"{image_path.stem}_detected{image_path.suffix}"
