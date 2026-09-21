@@ -26,9 +26,38 @@ MAX_VP_LINES = 120
 
 # Number of x,y samples used to describe the wide-angle distorted curve.
 NUM_DISTORTED_POINTS = 7
-# Generic ultra-wide bulge size used only when explicitly selected or inferred from metadata.\nGENERIC_ULTRAWIDE_CURVE_STRENGTH = 0.015\n
+# Generic ultra-wide bulge size used only when explicitly selected or inferred from metadata.
+GENERIC_ULTRAWIDE_CURVE_STRENGTH = 0.015
 
-@dataclass(frozen=True)\nclass DistortionSpec:\n    """How the curved image-space horizon was obtained.\n\n    This is intentionally explicit so an approximation can never be mistaken\n    for measured lens calibration.\n    """\n\n    source: str\n    model: str = "parabolic_approximation"\n    curve_strength: float = GENERIC_ULTRAWIDE_CURVE_STRENGTH\n    is_approximation: bool = True\n    basis: str | None = None\n\n\ndef generic_ultrawide_distortion(source: str, basis: str | None = None) -> DistortionSpec:\n    return DistortionSpec(source=source, basis=basis)\n\n\n@dataclass\nclass VanishingPoint:\n    x: float\n    y: float\n    supporting_lines: int\n\n\n@dataclass\nclass HorizonResult:
+
+@dataclass(frozen=True)
+class DistortionSpec:
+    """How the curved image-space horizon was obtained.
+
+    This is intentionally explicit so an approximation can never be mistaken
+    for measured lens calibration.
+    """
+
+    source: str
+    model: str = "parabolic_approximation"
+    curve_strength: float = GENERIC_ULTRAWIDE_CURVE_STRENGTH
+    is_approximation: bool = True
+    basis: str | None = None
+
+
+def generic_ultrawide_distortion(source: str, basis: str | None = None) -> DistortionSpec:
+    return DistortionSpec(source=source, basis=basis)
+
+
+@dataclass
+class VanishingPoint:
+    x: float
+    y: float
+    supporting_lines: int
+
+
+@dataclass
+class HorizonResult:
     detected: bool
     method: str = "none"
     confidence: float = 0.0
@@ -41,7 +70,10 @@ NUM_DISTORTED_POINTS = 7
     supporting_lines: int = 0
     vanishing_points: list[VanishingPoint] | None = None
     width: float | None = None
-    height: float | None = None\n    distortion: DistortionSpec | None = None\n\n    def rectified_dict(self) -> dict | None:
+    height: float | None = None
+    distortion: DistortionSpec | None = None
+
+    def rectified_dict(self) -> dict | None:
         """Geometric straight-line horizon (the original single-layer output)."""
         if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:
             return None
@@ -59,7 +91,40 @@ NUM_DISTORTED_POINTS = 7
             "angle_deg": round(float(self.angle_deg), 4) if self.angle_deg is not None else None,
         }
 
-    def distorted_dict(self) -> dict | None:\n        """Image-space curved horizon, only when a distortion source is known.\n\n        A generic parabola is allowed as an explicitly labelled approximation,\n        but no curve is emitted when there is no metadata/manual lens hint.\n        """\n        if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:\n            return None\n        if self.width is None or self.height is None or self.distortion is None:\n            return None\n        points = _parabolic_distortion(\n            self.left_y,\n            self.right_y,\n            self.center_y,\n            self.width,\n            self.height,\n            self.distortion.curve_strength,\n        )\n        return {\n            "type": "curve",\n            "sampling": "polyline",\n            "points": [[round(float(x), 4), round(float(y), 4)] for x, y in points],\n            "curve_strength": round(float(self.distortion.curve_strength), 6),\n            "distortion_source": self.distortion.source,\n            "distortion_model": self.distortion.model,\n            "is_approximation": self.distortion.is_approximation,\n            "basis": self.distortion.basis,\n            "center_y": round(float(self.center_y), 4),\n            "center_y_normalized": (\n                round(float(self.center_y_normalized), 4)\n                if self.center_y_normalized is not None\n                else None\n            ),\n        }
+    def distorted_dict(self) -> dict | None:
+        """Image-space curved horizon, only when a distortion source is known.
+
+        A generic parabola is allowed as an explicitly labelled approximation,
+        but no curve is emitted when there is no metadata/manual lens hint.
+        """
+        if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:
+            return None
+        if self.width is None or self.height is None or self.distortion is None:
+            return None
+        points = _parabolic_distortion(
+            self.left_y,
+            self.right_y,
+            self.center_y,
+            self.width,
+            self.height,
+            self.distortion.curve_strength,
+        )
+        return {
+            "type": "curve",
+            "sampling": "polyline",
+            "points": [[round(float(x), 4), round(float(y), 4)] for x, y in points],
+            "curve_strength": round(float(self.distortion.curve_strength), 6),
+            "distortion_source": self.distortion.source,
+            "distortion_model": self.distortion.model,
+            "is_approximation": self.distortion.is_approximation,
+            "basis": self.distortion.basis,
+            "center_y": round(float(self.center_y), 4),
+            "center_y_normalized": (
+                round(float(self.center_y_normalized), 4)
+                if self.center_y_normalized is not None
+                else None
+            ),
+        }
 
     def to_dict(self) -> dict:
         data = {
@@ -89,7 +154,8 @@ def _parabolic_distortion(
     center_y: float,
     width: float,
     height: float,
-    curve_strength: float,\n    num_points: int = NUM_DISTORTED_POINTS,
+    curve_strength: float,
+    num_points: int = NUM_DISTORTED_POINTS,
 ) -> list[tuple[float, float]]:
     """Approximate a wide-angle horizon curve from the rectified straight line.
 
@@ -450,7 +516,11 @@ def _rescale_result(
     return result
 
 
-def estimate_horizon(\n    image: np.ndarray,\n    distortion: DistortionSpec | None = None,\n) -> HorizonResult:\n    """Estimate the geometric horizon in original-image pixel coordinates."""
+def estimate_horizon(
+    image: np.ndarray,
+    distortion: DistortionSpec | None = None,
+) -> HorizonResult:
+    """Estimate the geometric horizon in original-image pixel coordinates."""
     if image is None or image.ndim < 2:
         return HorizonResult(detected=False)
 
@@ -477,4 +547,7 @@ def estimate_horizon(\n    image: np.ndarray,\n    distortion: DistortionSpec | 
     if not result.detected:
         result = _two_vanishing_point_horizon(segments, width, height)
 
-    result = _rescale_result(result, scale, original_width, original_height)\n    if result.detected:\n        result.distortion = distortion\n    return result\n
+    result = _rescale_result(result, scale, original_width, original_height)
+    if result.detected:
+        result.distortion = distortion
+    return result
