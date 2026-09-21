@@ -10,6 +10,13 @@ on:
       - "city-techno-vision/detect.py"
       - "city-techno-vision/tests/test_horizon.py"
       - ".github/workflows/horizon-validation.yml"
+  pull_request:
+    paths:
+      - "city-techno-vision/src/horizon.py"
+      - "city-techno-vision/src/visualize.py"
+      - "city-techno-vision/detect.py"
+      - "city-techno-vision/tests/test_horizon.py"
+      - ".github/workflows/horizon-validation.yml"
   workflow_dispatch:
 
 jobs:
