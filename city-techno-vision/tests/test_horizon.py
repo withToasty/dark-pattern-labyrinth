@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.horizon import estimate_horizon
+from src.horizon import estimate_horizon, generic_ultrawide_distortion
 
 
 def _synthetic_perspective_scene() -> np.ndarray:
@@ -117,7 +117,12 @@ def test_estimate_horizon_returns_not_detected_for_blank_image():
 
 
 def test_to_dict_splits_rectified_line_and_distorted_curve():
-    result = estimate_horizon(_synthetic_urban_scene())
+    result = estimate_horizon(
+        _synthetic_urban_scene(),
+        distortion=generic_ultrawide_distortion(
+            "manual_lens_mode", basis="test ultrawide hint"
+        ),
+    )
     data = result.to_dict()
 
     assert "left_y" not in data
@@ -129,6 +134,10 @@ def test_to_dict_splits_rectified_line_and_distorted_curve():
     distorted = data["distorted"]
     assert distorted["type"] == "curve"
     assert distorted["sampling"] == "polyline"
+    assert distorted["distortion_source"] == "manual_lens_mode"
+    assert distorted["distortion_model"] == "parabolic_approximation"
+    assert distorted["is_approximation"] is True
+    assert distorted["basis"] == "test ultrawide hint"
     assert len(distorted["points"]) == 7
     # The curve matches the rectified line at the image's horizontal center.
     assert distorted["center_y"] == pytest.approx(result.center_y, abs=1e-3)
@@ -146,4 +155,12 @@ def test_to_dict_has_no_rectified_or_distorted_when_not_detected():
     data = result.to_dict()
 
     assert data["rectified"] is None
+    assert data["distorted"] is None
+
+
+def test_to_dict_does_not_fake_curve_without_distortion_hint():
+    result = estimate_horizon(_synthetic_urban_scene())
+    data = result.to_dict()
+
+    assert data["rectified"] is not None
     assert data["distorted"] is None
