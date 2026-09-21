@@ -10,3 +10,7 @@ torch
 torchvision
 transformers
 pillow
+# needed only for the web UI/API (web/app.py), see README "Web UI"
+fastapi>=0.100.0
+uvicorn>=0.23.0
+python-multipart>=0.0.6

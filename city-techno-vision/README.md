@@ -44,6 +44,41 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
 | `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
 
+## Web UI
+
+ブラウザから画像を1枚アップロードして解析・結果表示までできる、最小構成のWeb版（FastAPI + HTML/CSS/vanilla JS、React等は不使用）。
+
+新しい画像認識ロジックはWeb側に持たず、CLIと同じ `src/pipeline.py` の
+`run_pipeline()` を呼ぶだけ。JSON/YAMLのschemaもCLIと同一。
+
+起動:
+
+```
+pip install -r requirements.txt
+uvicorn web.app:app --reload
+```
+
+`http://127.0.0.1:8000/` をブラウザで開くと使える。
+
+できること:
+
+- 画像のdrag & drop / ファイル選択 → プレビュー → 解析する
+- Original画像とbbox（＋horizon）付きのDetected画像を横並び表示（狭い画面では縦積み）
+- Detection一覧（id / label / confidence / minx / miny / maxx / maxy）
+- Horizonサマリー（`scene_geometry.horizon`がある場合のみ。`detected: false`はエラーではなく正常な結果として表示する）
+- fence検出時のみ表示される fence mask（折りたたみ表示）
+- JSON / YAML をタブ表示、Copy / Download
+- 不正なファイル・解析失敗時のエラー表示（stack traceはそのまま出さない）
+
+API: `POST /api/analyze`（multipart、`image=<file>`）で `run_id` / 検出結果 /
+JSON・YAMLテキスト / 各アセットの取得URL（`GET /api/runs/{run_id}/original`
+など）/ `warnings` を返す。YOLO/SegFormerのモデルはプロセス内でキャッシュされ、
+アップロードのたびには読み込まない。一時ファイルはrunごとのディレクトリに
+書き出し、古いrun（既定30分）は次のリクエスト時に簡易cleanupされる
+（DB・ログイン・履歴なし）。
+
+音楽生成、複数画像対応、ログイン、モデル選択UI、threshold変更UIはこのMVPには含まれない。
+
 ## モデルについて（Open Images V7 vs COCO）
 
 デフォルトの`yolov8n-oiv7.pt`はOpen Images V7で学習済み・601クラス。
@@ -290,10 +325,16 @@ city-techno-vision/
     horizon.py
     visualize.py
     export.py
+    pipeline.py        # CLI (detect.py) と Web API (web/app.py) が共有する処理
+  web/
+    app.py              # FastAPI app (POST /api/analyze など)
+    static/              # index.html / style.css / app.js
   tests/
     test_camera_metadata.py
+    test_export.py
     test_fence_detector.py
     test_horizon.py
+    test_web_api.py
   requirements.txt
 ```
 
