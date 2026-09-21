@@ -4,7 +4,7 @@ The estimator is model-free. It prefers an urban-scene method that needs only
 one horizontal vanishing point:
 
 1. detect long line segments,
-2. estimate camera roll from the dominant vertical-line family,
+2. estimate camera roll from a vertical vanishing point when possible,
 3. find one dominant horizontal vanishing point,
 4. draw the horizon through that point with the roll-derived orientation.
 
@@ -72,6 +72,8 @@ class HorizonResult:
     width: float | None = None
     height: float | None = None
     distortion: DistortionSpec | None = None
+    orientation_source: str | None = None
+    vertical_vanishing_point: VanishingPoint | None = None
 
     def rectified_dict(self) -> dict | None:
         """Geometric straight-line horizon (the original single-layer output)."""
@@ -132,10 +134,19 @@ class HorizonResult:
             "method": self.method,
             "confidence": round(float(self.confidence), 4),
             "supporting_lines": self.supporting_lines,
+            "orientation_source": self.orientation_source,
             "vanishing_points": None,
+            "vertical_vanishing_point": None,
             "rectified": self.rectified_dict(),
             "distorted": self.distorted_dict(),
         }
+        if self.vertical_vanishing_point is not None:
+            point = self.vertical_vanishing_point
+            data["vertical_vanishing_point"] = {
+                "x": round(float(point.x), 2),
+                "y": round(float(point.y), 2),
+                "supporting_lines": point.supporting_lines,
+            }
         if self.vanishing_points:
             data["vanishing_points"] = [
                 {
@@ -253,6 +264,7 @@ def _best_vanishing_point(
     height: int,
     excluded: np.ndarray | None = None,
     inlier_angle_deg: float = 3.0,
+    min_pair_angle_deg: float = 5.0,
 ) -> tuple[
     np.ndarray | None,
     np.ndarray | None,
@@ -292,7 +304,7 @@ def _best_vanishing_point(
 
             angle_delta = abs(_line_angle(selected_lines[i]) - _line_angle(selected_lines[j]))
             angle_delta = min(angle_delta, math.pi - angle_delta)
-            if math.degrees(angle_delta) < 5.0:
+            if math.degrees(angle_delta) < min_pair_angle_deg:
                 continue
 
             point = _intersection(selected_lines[i], selected_lines[j])
@@ -362,45 +374,112 @@ def _vertical_guided_horizon(
     if len(vertical_lines) < 6 or len(horizontal_candidates) < 6:
         return HorizonResult(detected=False)
 
-    roll_samples: list[tuple[float, float]] = []
-    for line in vertical_lines:
-        angle_deg = math.degrees(_line_angle(line))
-        if angle_deg < 0:
-            angle_deg += 180
-        deviation_from_vertical = angle_deg - 90
-        roll_samples.append((deviation_from_vertical, _line_length(line)))
-
-    roll_deg = _weighted_median(roll_samples)
-    total_vertical_weight = sum(weight for _, weight in roll_samples)
-    concentrated_vertical_weight = sum(
-        weight for deviation, weight in roll_samples if abs(deviation - roll_deg) <= 2.5
-    )
-    vertical_concentration = (
-        concentrated_vertical_weight / total_vertical_weight if total_vertical_weight else 0.0
-    )
-
-    point, inliers, _, _, selected_lengths = _best_vanishing_point(
+    # One horizontal vanishing point fixes a point on the horizon.
+    horizontal_point, horizontal_inliers, _, _, horizontal_lengths = _best_vanishing_point(
         horizontal_candidates, width, height
     )
-    if point is None or inliers is None or int(inliers.sum()) < 4:
+    if (
+        horizontal_point is None
+        or horizontal_inliers is None
+        or int(horizontal_inliers.sum()) < 4
+    ):
         return HorizonResult(detected=False)
 
-    slope = math.tan(math.radians(roll_deg))
-    left_y = float(point[1] + slope * (0 - point[0]))
-    right_y = float(point[1] + slope * ((width - 1) - point[0]))
-    center_y = float(point[1] + slope * ((width - 1) / 2 - point[0]))
+    # Prefer a vertical vanishing point over averaging apparent vertical-line
+    # angles. This matters for ultra-wide photos: edge buildings can lean due
+    # to perspective/lens distortion even when the phone itself is level.
+    principal_x = (width - 1) / 2
+    principal_y = (height - 1) / 2
+    vertical_point, vertical_inliers, _, _, vertical_lengths = _best_vanishing_point(
+        vertical_lines,
+        width,
+        height,
+        inlier_angle_deg=3.0,
+        min_pair_angle_deg=0.5,
+    )
+
+    vertical_vp = None
+    orientation_source = "dominant_vertical_orientation"
+    orientation_support = 0.0
+    orientation_count = len(vertical_lines)
+
+    stable_vertical_vp = False
+    if vertical_point is not None and vertical_inliers is not None:
+        vp_count = int(vertical_inliers.sum())
+        vp_distance = math.hypot(
+            float(vertical_point[0]) - principal_x,
+            float(vertical_point[1]) - principal_y,
+        )
+        # A near-image intersection is often a facade/tower family rather than
+        # the world-vertical vanishing point. Near-level phone shots normally
+        # place the vertical VP well outside the frame.
+        stable_vertical_vp = (
+            vp_count >= 4
+            and vp_distance >= min(width, height)
+            and abs(float(vertical_point[1]) - principal_y) >= 0.5 * height
+        )
+
+    if stable_vertical_vp:
+        dx = float(vertical_point[0]) - principal_x
+        dy = float(vertical_point[1]) - principal_y
+        slope = -dx / dy
+        orientation_source = "vertical_vanishing_point"
+        orientation_count = int(vertical_inliers.sum())
+        orientation_support = float(
+            vertical_lengths[vertical_inliers].sum()
+            / max(vertical_lengths.sum(), 1.0)
+        )
+        vertical_vp = VanishingPoint(
+            float(vertical_point[0]),
+            float(vertical_point[1]),
+            orientation_count,
+        )
+    else:
+        # Fallback for parallel/synthetic verticals, where the vertical VP is
+        # effectively at infinity.
+        roll_samples: list[tuple[float, float]] = []
+        for line in vertical_lines:
+            angle_deg = math.degrees(_line_angle(line))
+            if angle_deg < 0:
+                angle_deg += 180
+            deviation_from_vertical = angle_deg - 90
+            roll_samples.append((deviation_from_vertical, _line_length(line)))
+
+        roll_deg = _weighted_median(roll_samples)
+        slope = math.tan(math.radians(roll_deg))
+        total_vertical_weight = sum(weight for _, weight in roll_samples)
+        concentrated_vertical_weight = sum(
+            weight
+            for deviation, weight in roll_samples
+            if abs(deviation - roll_deg) <= 2.5
+        )
+        orientation_support = (
+            concentrated_vertical_weight / total_vertical_weight
+            if total_vertical_weight
+            else 0.0
+        )
+
+    left_y = float(horizontal_point[1] + slope * (0 - horizontal_point[0]))
+    right_y = float(
+        horizontal_point[1] + slope * ((width - 1) - horizontal_point[0])
+    )
+    center_y = float(
+        horizontal_point[1]
+        + slope * ((width - 1) / 2 - horizontal_point[0])
+    )
 
     if not (-0.25 * height <= center_y <= 1.25 * height):
         return HorizonResult(detected=False)
 
     horizontal_support = float(
-        selected_lengths[inliers].sum() / max(selected_lengths.sum(), 1.0)
+        horizontal_lengths[horizontal_inliers].sum()
+        / max(horizontal_lengths.sum(), 1.0)
     )
-    horizontal_count_factor = min(1.0, int(inliers.sum()) / 10.0)
-    vertical_count_factor = min(1.0, len(vertical_lines) / 10.0)
+    horizontal_count_factor = min(1.0, int(horizontal_inliers.sum()) / 10.0)
+    vertical_count_factor = min(1.0, orientation_count / 10.0)
     confidence = (
-        0.45 * horizontal_support
-        + 0.25 * vertical_concentration
+        0.40 * horizontal_support
+        + 0.30 * orientation_support
         + 0.15 * horizontal_count_factor
         + 0.15 * vertical_count_factor
     )
@@ -416,12 +495,17 @@ def _vertical_guided_horizon(
         center_y_normalized=center_y / height,
         slope=slope,
         angle_deg=math.degrees(math.atan(slope)),
-        supporting_lines=int(inliers.sum()) + len(vertical_lines),
+        supporting_lines=int(horizontal_inliers.sum()) + orientation_count,
         vanishing_points=[
-            VanishingPoint(float(point[0]), float(point[1]), int(inliers.sum()))
+            VanishingPoint(
+                float(horizontal_point[0]),
+                float(horizontal_point[1]),
+                int(horizontal_inliers.sum()),
+            )
         ],
+        orientation_source=orientation_source,
+        vertical_vanishing_point=vertical_vp,
     )
-
 
 def _two_vanishing_point_horizon(
     segments: list[tuple[float, float, float, float]],
@@ -507,6 +591,9 @@ def _rescale_result(
             for point in result.vanishing_points:
                 point.x /= scale
                 point.y /= scale
+        if result.vertical_vanishing_point is not None:
+            result.vertical_vanishing_point.x /= scale
+            result.vertical_vanishing_point.y /= scale
 
     if result.center_y is not None:
         result.center_y_normalized = result.center_y / original_height
