@@ -1,0 +1,49 @@
+image:
+  filename: user_city_3998.jpg
+  width: 320
+  height: 240
+detections:
+- id: 1
+  label: Skyscraper
+  confidence: 0.3068
+  minx: 246
+  maxx: 320
+  miny: 0
+  maxy: 100
+- id: 2
+  label: Tree
+  confidence: 0.3003
+  minx: 282
+  maxx: 320
+  miny: 69
+  maxy: 226
+- id: 3
+  label: Skyscraper
+  confidence: 0.2381
+  minx: 0
+  maxx: 48
+  miny: 38
+  maxy: 126
+- id: 4
+  label: Building
+  confidence: 0.2057
+  minx: 0
+  maxx: 49
+  miny: 37
+  maxy: 127
+scene_geometry:
+  horizon:
+    detected: true
+    method: vertical_guided_single_vp
+    confidence: 0.6262
+    left_y: 155.244
+    right_y: 93.28
+    center_y: 124.262
+    center_y_normalized: 0.5178
+    slope: -0.1942
+    angle_deg: -10.9925
+    supporting_lines: 44
+    vanishing_points:
+    - x: 168.88
+      y: 122.44
+      supporting_lines: 33

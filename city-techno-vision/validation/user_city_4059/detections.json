@@ -1,0 +1,44 @@
+{
+  "image": {
+    "filename": "user_city_4059.jpg",
+    "width": 160,
+    "height": 120
+  },
+  "detections": [
+    {
+      "id": 1,
+      "label": "Tower",
+      "confidence": 0.2426,
+      "minx": 35,
+      "maxx": 50,
+      "miny": 22,
+      "maxy": 74
+    }
+  ],
+  "scene_geometry": {
+    "horizon": {
+      "detected": true,
+      "method": "two_horizontal_vanishing_points",
+      "confidence": 0.4168,
+      "left_y": 72.0585,
+      "right_y": 70.6232,
+      "center_y": 71.3408,
+      "center_y_normalized": 0.5945,
+      "slope": -0.009,
+      "angle_deg": -0.5172,
+      "supporting_lines": 12,
+      "vanishing_points": [
+        {
+          "x": -15.35,
+          "y": 72.2,
+          "supporting_lines": 8
+        },
+        {
+          "x": 80.94,
+          "y": 71.33,
+          "supporting_lines": 4
+        }
+      ]
+    }
+  }
+}
