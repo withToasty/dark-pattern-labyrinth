@@ -1,5 +1,8 @@
 name: city-techno-vision horizon validation
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -39,51 +42,78 @@ jobs:
         run: |
           pytest -q tests/test_horizon.py
 
-      - name: Generate synthetic horizon demo
+      - name: Recover and test previous Kobe photo
         working-directory: city-techno-vision
         run: |
+          git fetch origin 1c14c9e972de20285f802da48a5e55a676ed57a3 --depth=1
+          git show FETCH_HEAD:city-techno-vision/tests/fixtures/kobe_fence_test.jpg > /tmp/kobe_fence_test.jpg
           python - <<'PY'
           import json
           from pathlib import Path
           import cv2
-          import numpy as np
           from src.horizon import estimate_horizon
           from src.visualize import draw_horizon
 
-          height, width = 600, 800
-          image = np.zeros((height, width, 3), dtype=np.uint8)
-          left_vp = np.array([-500.0, 280.0])
-          right_vp = np.array([1300.0, 320.0])
-          anchors = [(100, 500), (200, 420), (300, 520), (500, 460), (650, 520), (700, 400)]
+          original = cv2.imread("/tmp/kobe_fence_test.jpg")
+          assert original is not None
+          h, w = original.shape[:2]
+          scale = min(1.0, 1000.0 / max(w, h))
+          working = cv2.resize(
+              original,
+              (round(w * scale), round(h * scale)),
+              interpolation=cv2.INTER_AREA,
+          )
+          result = estimate_horizon(working)
 
-          for vp in (left_vp, right_vp):
-              for ax, ay in anchors:
-                  anchor = np.array([ax, ay], dtype=float)
-                  direction = vp - anchor
-                  direction /= np.linalg.norm(direction)
-                  start = anchor - 100 * direction
-                  end = anchor + 100 * direction
-                  cv2.line(
-                      image,
-                      tuple(np.round(start).astype(int)),
-                      tuple(np.round(end).astype(int)),
-                      (255, 255, 255),
-                      3,
-                  )
+          if result.detected:
+              result.left_y /= scale
+              result.right_y /= scale
+              result.center_y /= scale
+              result.center_y_normalized = result.center_y / h
+              for vp in result.vanishing_points or []:
+                  vp.x /= scale
+                  vp.y /= scale
 
-          result = estimate_horizon(image)
-          out = Path("/tmp/horizon-output")
-          out.mkdir(parents=True, exist_ok=True)
-          cv2.imwrite(str(out / "synthetic_horizon.png"), draw_horizon(image, result))
-          (out / "horizon_result.json").write_text(
-              json.dumps(result.to_dict(), indent=2) + "\n",
+          data = result.to_dict()
+          data["validation"] = {
+              "source": "city-techno-vision/tests/fixtures/kobe_fence_test.jpg",
+              "source_commit": "1c14c9e972de20285f802da48a5e55a676ed57a3",
+              "original_width": w,
+              "original_height": h,
+              "analysis_scale": scale,
+              "analysis_width": working.shape[1],
+              "analysis_height": working.shape[0],
+          }
+
+          out = Path("validation")
+          out.mkdir(exist_ok=True)
+          (out / "kobe_horizon_result.json").write_text(
+              json.dumps(data, indent=2) + "\n",
               encoding="utf-8",
           )
-          print(json.dumps(result.to_dict(), indent=2))
+
+          rendered = draw_horizon(original, result)
+          cv2.imwrite(str(out / "kobe_horizon_result.jpg"), rendered)
+
+          print("KOBE_RESULT")
+          print(json.dumps(data, indent=2))
           PY
 
-      - name: Upload demo
+      - name: Commit Kobe validation result
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add city-techno-vision/validation/kobe_horizon_result.json city-techno-vision/validation/kobe_horizon_result.jpg
+          if git diff --cached --quiet; then
+            echo "No validation changes"
+          else
+            git commit -m "Record Kobe horizon validation result"
+            git push
+          fi
+
+      - name: Upload validation output
         uses: actions/upload-artifact@v4
         with:
           name: horizon-validation-output
-          path: /tmp/horizon-output/
+          path: city-techno-vision/validation/
