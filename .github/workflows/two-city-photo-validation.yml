@@ -1,0 +1,77 @@
+name: validate two new city photos
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - test/two-new-city-photos
+    paths:
+      - ".github/workflows/two-city-photo-validation.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install detector dependencies
+        working-directory: city-techno-vision
+        run: |
+          pip install ultralytics opencv-python-headless PyYAML
+
+      - name: Analyze IMG_4059
+        working-directory: city-techno-vision
+        run: |
+          python detect.py \
+            --image tests/fixtures/user_city_4059.jpg \
+            --output-dir validation/user_city_4059 \
+            --conf 0.15 \
+            --fence-model ""
+
+      - name: Analyze IMG_3998
+        working-directory: city-techno-vision
+        run: |
+          python detect.py \
+            --image tests/fixtures/user_city_3998.jpg \
+            --output-dir validation/user_city_3998 \
+            --conf 0.15 \
+            --fence-model ""
+
+      - name: Print summaries
+        working-directory: city-techno-vision
+        run: |
+          python - <<'PY'
+          import json
+          for name in ("user_city_4059", "user_city_3998"):
+              with open(f"validation/{name}/detections.json") as f:
+                  data = json.load(f)
+              print("\n###", name)
+              print("detections:", len(data["detections"]))
+              for d in data["detections"]:
+                  print(d)
+              print("horizon:", data.get("scene_geometry", {}).get("horizon"))
+          PY
+
+      - name: Commit validation outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add city-techno-vision/validation/user_city_4059 city-techno-vision/validation/user_city_3998
+          git commit -m "Record two-city-photo validation"
+          git push
+
+      - name: Upload validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: two-city-photo-validation
+          path: |
+            city-techno-vision/validation/user_city_4059/
+            city-techno-vision/validation/user_city_3998/
