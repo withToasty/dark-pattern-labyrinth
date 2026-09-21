@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
         "also covers things like building/skyscraper/tree/window/door/billboard). "
         "Use an open-vocabulary model (e.g. yolov8s-worldv2.pt) to enable --classes.",
     )
-    parser.add_argument("--conf", type=float, default=0.25, help="confidence threshold (default: 0.25)")
+    parser.add_argument("--conf", type=float, default=0.15, help="confidence threshold (default: 0.15)")
     parser.add_argument(
         "--fence-model",
         default=DEFAULT_FENCE_MODEL_ID,

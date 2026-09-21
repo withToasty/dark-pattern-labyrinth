@@ -11,6 +11,22 @@ import yaml
 from .detector import Detection
 
 
+VEHICLE_LABELS = {
+    "car",
+    "land vehicle",
+    "truck",
+    "bus",
+    "motorcycle",
+}
+
+
+def _export_detection(detection: Detection) -> dict:
+    data = asdict(detection)
+    if detection.label.casefold() in VEHICLE_LABELS:
+        data["group"] = "road_vehicle"
+    return data
+
+
 def build_result(filename: str, width: int, height: int, detections: list[Detection]) -> dict:
     return {
         "image": {
@@ -18,7 +34,7 @@ def build_result(filename: str, width: int, height: int, detections: list[Detect
             "width": width,
             "height": height,
         },
-        "detections": [asdict(d) for d in detections],
+        "detections": [_export_detection(d) for d in detections],
     }
 
 
