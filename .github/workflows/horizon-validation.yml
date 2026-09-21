@@ -79,6 +79,42 @@ jobs:
               json.dumps(result.to_dict(), indent=2) + "\n",
               encoding="utf-8",
           )
+          print("SYNTHETIC_RESULT")
+          print(json.dumps(result.to_dict(), indent=2))
+          PY
+
+      - name: Recover previously used Kobe test photo
+        run: |
+          git fetch origin 1c14c9e972de20285f802da48a5e55a676ed57a3 --depth=1
+          git show FETCH_HEAD:city-techno-vision/tests/fixtures/kobe_fence_test.jpg > /tmp/kobe_fence_test.jpg
+          file /tmp/kobe_fence_test.jpg
+          ls -lh /tmp/kobe_fence_test.jpg
+
+      - name: Run horizon estimation on Kobe photo
+        working-directory: city-techno-vision
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import cv2
+          from src.horizon import estimate_horizon
+          from src.visualize import draw_horizon
+
+          image_path = "/tmp/kobe_fence_test.jpg"
+          image = cv2.imread(image_path)
+          assert image is not None, "could not read recovered Kobe test photo"
+
+          result = estimate_horizon(image)
+          out = Path("/tmp/horizon-output")
+          out.mkdir(parents=True, exist_ok=True)
+          cv2.imwrite(str(out / "kobe_horizon.png"), draw_horizon(image, result))
+          (out / "kobe_horizon_result.json").write_text(
+              json.dumps(result.to_dict(), indent=2) + "\n",
+              encoding="utf-8",
+          )
+
+          print(f"KOBE_IMAGE width={image.shape[1]} height={image.shape[0]}")
+          print("KOBE_RESULT")
           print(json.dumps(result.to_dict(), indent=2))
           PY
 
