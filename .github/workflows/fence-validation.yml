@@ -4,6 +4,9 @@ name: city-techno-vision fence validation
 # GitHub Actions runner, where huggingface.co is reachable (unlike the Claude
 # sandbox, which blocks it -- see city-techno-vision/STATUS.md).
 on:
+  push:
+    branches:
+      - test/fence-conf-010-20260921
   workflow_dispatch:
     inputs:
       image_url:
@@ -54,9 +57,7 @@ jobs:
           elif [ -n "$IMAGE_URL" ]; then
             curl -sSL "$IMAGE_URL" -o /tmp/fence-input/photo.jpg
           else
-            echo "::warning::Blocked: no test image provided. Re-run with image_url or image_path set to a street-scene photo containing a fence."
-            echo "blocked=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            cp "city-techno-vision/tests/fixtures/kobe_fence_test_2.jpg" /tmp/fence-input/photo.jpg
           fi
           echo "blocked=false" >> "$GITHUB_OUTPUT"
 
@@ -67,6 +68,7 @@ jobs:
           python detect.py \
             --image /tmp/fence-input/photo.jpg \
             --output-dir /tmp/fence-output \
+            --conf 0.10 \
             --fence-model nvidia/segformer-b0-finetuned-cityscapes-1024-1024
 
       - name: Summarize result
@@ -81,6 +83,9 @@ jobs:
           with open("/tmp/fence-output/detections.json") as f:
               result = json.load(f)
           fence = [d for d in result["detections"] if d["label"] == "fence"]
+          print("detections:")
+          for d in result["detections"]:
+              print(f"  {d['label']}: {d['confidence']}")
           print(f"fence detections: {len(fence)}")
           print(f"total detections: {len(result['detections'])}")
           print("status: success")
