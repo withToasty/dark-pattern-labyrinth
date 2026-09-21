@@ -1,0 +1,6 @@
+[
+  {"label": "car", "confidence": 0.93, "screen_area": 0.24, "motion": 0.72},
+  {"label": "bicycle", "confidence": 0.88, "screen_area": 0.08, "motion": 0.55},
+  {"label": "construction", "confidence": 0.91, "screen_area": 0.31, "motion": 0.36},
+  {"label": "sky", "confidence": 0.99, "screen_area": 0.42, "motion": 0.02}
+]

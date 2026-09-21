@@ -1,0 +1,15 @@
+[project]
+name = "world-to-techno"
+version = "0.1.0"
+description = "Translate visual detections into a rule-based techno arrangement plan."
+requires-python = ">=3.11"
+
+[project.scripts]
+world-to-techno = "world_to_techno.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["world_to_techno"]
