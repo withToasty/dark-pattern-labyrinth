@@ -15,7 +15,7 @@ mapped back to the original image coordinates.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import math
 
 import cv2
@@ -23,6 +23,11 @@ import numpy as np
 
 MAX_ANALYSIS_DIM = 1000
 MAX_VP_LINES = 120
+
+# Number of x,y samples used to describe the wide-angle distorted curve.
+NUM_DISTORTED_POINTS = 7
+# Default bulge size for the distorted curve, as a fraction of image height.
+DEFAULT_CURVE_STRENGTH = 0.015
 
 
 @dataclass
@@ -45,25 +50,100 @@ class HorizonResult:
     angle_deg: float | None = None
     supporting_lines: int = 0
     vanishing_points: list[VanishingPoint] | None = None
+    width: float | None = None
+    height: float | None = None
+
+    def rectified_dict(self) -> dict | None:
+        """Geometric straight-line horizon (the original single-layer output)."""
+        if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:
+            return None
+        return {
+            "type": "line",
+            "center_y": round(float(self.center_y), 4),
+            "center_y_normalized": (
+                round(float(self.center_y_normalized), 4)
+                if self.center_y_normalized is not None
+                else None
+            ),
+            "left_y": round(float(self.left_y), 4),
+            "right_y": round(float(self.right_y), 4),
+            "slope": round(float(self.slope), 4) if self.slope is not None else None,
+            "angle_deg": round(float(self.angle_deg), 4) if self.angle_deg is not None else None,
+        }
+
+    def distorted_dict(self, curve_strength: float = DEFAULT_CURVE_STRENGTH) -> dict | None:
+        """Wide-angle curved horizon, approximated from the rectified line."""
+        if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:
+            return None
+        if self.width is None or self.height is None:
+            return None
+        points = _parabolic_distortion(
+            self.left_y, self.right_y, self.center_y, self.width, self.height, curve_strength
+        )
+        return {
+            "type": "curve",
+            "sampling": "polyline",
+            "points": [[round(float(x), 4), round(float(y), 4)] for x, y in points],
+            "curve_strength": curve_strength,
+            "center_y": round(float(self.center_y), 4),
+            "center_y_normalized": (
+                round(float(self.center_y_normalized), 4)
+                if self.center_y_normalized is not None
+                else None
+            ),
+        }
 
     def to_dict(self) -> dict:
-        data = asdict(self)
-        data["confidence"] = round(float(self.confidence), 4)
-        for key in (
-            "left_y",
-            "right_y",
-            "center_y",
-            "center_y_normalized",
-            "slope",
-            "angle_deg",
-        ):
-            if data[key] is not None:
-                data[key] = round(float(data[key]), 4)
-        if data["vanishing_points"]:
-            for point in data["vanishing_points"]:
-                point["x"] = round(float(point["x"]), 2)
-                point["y"] = round(float(point["y"]), 2)
+        data = {
+            "detected": self.detected,
+            "method": self.method,
+            "confidence": round(float(self.confidence), 4),
+            "supporting_lines": self.supporting_lines,
+            "vanishing_points": None,
+            "rectified": self.rectified_dict(),
+            "distorted": self.distorted_dict(),
+        }
+        if self.vanishing_points:
+            data["vanishing_points"] = [
+                {
+                    "x": round(float(point.x), 2),
+                    "y": round(float(point.y), 2),
+                    "supporting_lines": point.supporting_lines,
+                }
+                for point in self.vanishing_points
+            ]
         return data
+
+
+def _parabolic_distortion(
+    left_y: float,
+    right_y: float,
+    center_y: float,
+    width: float,
+    height: float,
+    curve_strength: float = DEFAULT_CURVE_STRENGTH,
+    num_points: int = NUM_DISTORTED_POINTS,
+) -> list[tuple[float, float]]:
+    """Approximate a wide-angle horizon curve from the rectified straight line.
+
+    Simple parabolic stand-in for barrel distortion: the curve matches the
+    rectified line exactly at the image's horizontal center (distortion is
+    weakest near the principal point) and bows away from the image's
+    vertical center by an increasing amount toward the left/right edges,
+    where lens distortion is strongest.
+    """
+    away_from_center = 1.0 if center_y >= height / 2 else -1.0
+    max_offset = away_from_center * curve_strength * height
+    span = max(width - 1, 1.0)
+
+    points: list[tuple[float, float]] = []
+    for index in range(num_points):
+        x = span * index / (num_points - 1)
+        base_y = left_y + (right_y - left_y) * (x / span)
+        normalized_x = 2 * x / span - 1
+        offset = max_offset * normalized_x**2
+        points.append((x, base_y + offset))
+    return points
 
 
 def _line_angle(segment: tuple[float, float, float, float]) -> float:
@@ -378,24 +458,28 @@ def _two_vanishing_point_horizon(
     )
 
 
-def _rescale_result(result: HorizonResult, scale: float, original_height: int) -> HorizonResult:
-    if not result.detected or scale == 1.0:
-        if result.detected and result.center_y is not None:
-            result.center_y_normalized = result.center_y / original_height
+def _rescale_result(
+    result: HorizonResult, scale: float, original_width: int, original_height: int
+) -> HorizonResult:
+    if not result.detected:
         return result
 
-    for attribute in ("left_y", "right_y", "center_y"):
-        value = getattr(result, attribute)
-        if value is not None:
-            setattr(result, attribute, value / scale)
+    if scale != 1.0:
+        for attribute in ("left_y", "right_y", "center_y"):
+            value = getattr(result, attribute)
+            if value is not None:
+                setattr(result, attribute, value / scale)
 
-    if result.vanishing_points:
-        for point in result.vanishing_points:
-            point.x /= scale
-            point.y /= scale
+        if result.vanishing_points:
+            for point in result.vanishing_points:
+                point.x /= scale
+                point.y /= scale
 
     if result.center_y is not None:
         result.center_y_normalized = result.center_y / original_height
+
+    result.width = original_width
+    result.height = original_height
     return result
 
 
@@ -427,4 +511,4 @@ def estimate_horizon(image: np.ndarray) -> HorizonResult:
     if not result.detected:
         result = _two_vanishing_point_horizon(segments, width, height)
 
-    return _rescale_result(result, scale, original_height)
+    return _rescale_result(result, scale, original_width, original_height)
