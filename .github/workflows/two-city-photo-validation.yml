@@ -11,6 +11,7 @@ on:
       - ".github/workflows/two-city-photo-validation.yml"
       - "city-techno-vision/tests/fixtures/user_city_4059.jpg"
       - "city-techno-vision/tests/fixtures/user_city_3998.jpg"
+      - "city-techno-vision/src/horizon.py"
   workflow_dispatch:
 
 jobs:
