@@ -27,7 +27,17 @@ MAX_VP_LINES = 120
 # Number of x,y samples used to describe the wide-angle distorted curve.
 NUM_DISTORTED_POINTS = 7
 # Generic ultra-wide bulge size used only when explicitly selected or inferred from metadata.
-GENERIC_ULTRAWIDE_CURVE_STRENGTH = 0.015\n\n# Musical-reference horizon gate. The goal is not physical survey accuracy;\n# it is to avoid visually implausible reference lines that would distort\n# downstream object-to-horizon distance features.\nMAX_REFERENCE_ANGLE_DEG = 8.0\nMIN_REFERENCE_SPATIAL_SPAN = 0.35\nMIN_REFERENCE_SPATIAL_BINS = 2\nMIN_REFERENCE_IN_FRAME_FRACTION = 0.60\nMIN_REFERENCE_SCORE = 0.45\n
+GENERIC_ULTRAWIDE_CURVE_STRENGTH = 0.015
+
+# Musical-reference horizon gate. The goal is not physical survey accuracy;
+# it is to avoid visually implausible reference lines that would distort
+# downstream object-to-horizon distance features.
+MAX_REFERENCE_ANGLE_DEG = 8.0
+MIN_REFERENCE_SPATIAL_SPAN = 0.35
+MIN_REFERENCE_SPATIAL_BINS = 2
+MIN_REFERENCE_IN_FRAME_FRACTION = 0.60
+MIN_REFERENCE_SCORE = 0.45
+
 
 @dataclass(frozen=True)
 class DistortionSpec:
@@ -72,7 +82,15 @@ class HorizonResult:
     height: float | None = None
     distortion: DistortionSpec | None = None
     orientation_source: str | None = None
-    vertical_vanishing_point: VanishingPoint | None = None\n    role: str = "musical_reference"\n    candidate_detected: bool = False\n    reference_score: float = 0.0\n    spatial_support_span: float = 0.0\n    spatial_support_bins: int = 0\n    in_frame_fraction: float = 0.0\n    rejection_reason: str | None = None\n
+    vertical_vanishing_point: VanishingPoint | None = None
+    role: str = "musical_reference"
+    candidate_detected: bool = False
+    reference_score: float = 0.0
+    spatial_support_span: float = 0.0
+    spatial_support_bins: int = 0
+    in_frame_fraction: float = 0.0
+    rejection_reason: str | None = None
+
     def rectified_dict(self) -> dict | None:
         """Geometric straight-line horizon (the original single-layer output)."""
         if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:
@@ -130,7 +148,15 @@ class HorizonResult:
         data = {
             "detected": self.detected,
             "method": self.method,
-            "role": self.role,\n            "confidence": round(float(self.confidence), 4),\n            "candidate_detected": self.candidate_detected,\n            "reference_score": round(float(self.reference_score), 4),\n            "spatial_support_span": round(float(self.spatial_support_span), 4),\n            "spatial_support_bins": self.spatial_support_bins,\n            "in_frame_fraction": round(float(self.in_frame_fraction), 4),\n            "rejection_reason": self.rejection_reason,\n            "supporting_lines": self.supporting_lines,
+            "role": self.role,
+            "confidence": round(float(self.confidence), 4),
+            "candidate_detected": self.candidate_detected,
+            "reference_score": round(float(self.reference_score), 4),
+            "spatial_support_span": round(float(self.spatial_support_span), 4),
+            "spatial_support_bins": self.spatial_support_bins,
+            "in_frame_fraction": round(float(self.in_frame_fraction), 4),
+            "rejection_reason": self.rejection_reason,
+            "supporting_lines": self.supporting_lines,
             "orientation_source": self.orientation_source,
             "vanishing_points": None,
             "vertical_vanishing_point": None,
@@ -474,7 +500,7 @@ def _vertical_guided_horizon(
         return HorizonResult(detected=False)
 
     # One horizontal vanishing point fixes a point on the horizon.
-    horizontal_point, horizontal_inliers, _, _, horizontal_lengths = _best_vanishing_point(
+    horizontal_point, horizontal_inliers, _, horizontal_selected_lines, horizontal_lengths = _best_vanishing_point(
         horizontal_candidates, width, height
     )
     if (
@@ -570,7 +596,16 @@ def _vertical_guided_horizon(
     if not (-0.25 * height <= center_y <= 1.25 * height):
         return HorizonResult(detected=False)
 
-    horizontal_support = float(\n        horizontal_lengths[horizontal_inliers].sum()\n        / max(horizontal_lengths.sum(), 1.0)\n    )\n    spatial_span, spatial_bins = _support_spatial_metrics(\n        horizontal_candidates if len(horizontal_candidates) <= MAX_VP_LINES else [horizontal_candidates[i] for i in np.argsort(-np.array([_line_length(line) for line in horizontal_candidates]))[:MAX_VP_LINES]],\n        horizontal_inliers,\n        width,\n    )\n    horizontal_count_factor = min(1.0, int(horizontal_inliers.sum()) / 10.0)
+    horizontal_support = float(
+        horizontal_lengths[horizontal_inliers].sum()
+        / max(horizontal_lengths.sum(), 1.0)
+    )
+    spatial_span, spatial_bins = _support_spatial_metrics(
+        horizontal_selected_lines,
+        horizontal_inliers,
+        width,
+    )
+    horizontal_count_factor = min(1.0, int(horizontal_inliers.sum()) / 10.0)
     vertical_count_factor = min(1.0, orientation_count / 10.0)
     confidence = (
         0.40 * horizontal_support
@@ -599,7 +634,11 @@ def _vertical_guided_horizon(
             )
         ],
         orientation_source=orientation_source,
-        vertical_vanishing_point=vertical_vp,\n        spatial_support_span=spatial_span,\n        spatial_support_bins=spatial_bins,\n    )\n
+        vertical_vanishing_point=vertical_vp,
+        spatial_support_span=spatial_span,
+        spatial_support_bins=spatial_bins,
+    )
+
 def _two_vanishing_point_horizon(
     segments: list[tuple[float, float, float, float]],
     width: int,
@@ -639,7 +678,11 @@ def _two_vanishing_point_horizon(
             supporting_lines=int(first_inliers.sum() + second_inliers.sum()),
         )
 
-    support_mask = first_inliers | second_inliers\n    spatial_span, spatial_bins = _support_spatial_metrics(\n        selected_lines, support_mask, width\n    )\n    coverage = float(selected_lengths[support_mask].sum() / max(selected_lengths.sum(), 1.0))
+    support_mask = first_inliers | second_inliers
+    spatial_span, spatial_bins = _support_spatial_metrics(
+        selected_lines, support_mask, width
+    )
+    coverage = float(selected_lengths[support_mask].sum() / max(selected_lengths.sum(), 1.0))
     first_count = int(first_inliers.sum())
     second_count = int(second_inliers.sum())
     balance = min(first_count, second_count) / max(first_count, second_count, 1)
@@ -663,7 +706,11 @@ def _two_vanishing_point_horizon(
         slope=slope,
         angle_deg=math.degrees(math.atan(slope)),
         supporting_lines=int(support_mask.sum()),
-        vanishing_points=points,\n        spatial_support_span=spatial_span,\n        spatial_support_bins=spatial_bins,\n    )\n
+        vanishing_points=points,
+        spatial_support_span=spatial_span,
+        spatial_support_bins=spatial_bins,
+    )
+
 
 def _rescale_result(
     result: HorizonResult, scale: float, original_width: int, original_height: int
