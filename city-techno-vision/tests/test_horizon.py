@@ -9,7 +9,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.horizon import estimate_horizon, generic_ultrawide_distortion
+from src.horizon import (
+    HorizonResult,
+    _apply_reference_gate,
+    estimate_horizon,
+    generic_ultrawide_distortion,
+)
 
 
 def _synthetic_perspective_scene() -> np.ndarray:
@@ -197,6 +202,7 @@ def test_to_dict_splits_rectified_line_and_distorted_curve():
     data = result.to_dict()
 
     assert "left_y" not in data
+    assert data["role"] == "musical_reference"
     assert data["rectified"]["type"] == "line"
     assert data["rectified"]["center_y"] == pytest.approx(result.center_y, abs=1e-3)
     assert data["rectified"]["left_y"] == pytest.approx(result.left_y, abs=1e-3)
@@ -235,3 +241,67 @@ def test_to_dict_does_not_fake_curve_without_distortion_hint():
 
     assert data["rectified"] is not None
     assert data["distorted"] is None
+
+
+def _candidate_for_gate(
+    *,
+    angle_deg: float = 1.0,
+    spatial_span: float = 0.7,
+    spatial_bins: int = 3,
+    left_y: float = 280.0,
+    right_y: float = 290.0,
+    confidence: float = 0.75,
+) -> HorizonResult:
+    slope = (right_y - left_y) / 799
+    return HorizonResult(
+        detected=True,
+        method="test_candidate",
+        confidence=confidence,
+        left_y=left_y,
+        right_y=right_y,
+        center_y=(left_y + right_y) / 2,
+        center_y_normalized=((left_y + right_y) / 2) / 600,
+        slope=slope,
+        angle_deg=angle_deg,
+        spatial_support_span=spatial_span,
+        spatial_support_bins=spatial_bins,
+    )
+
+
+def test_reference_gate_accepts_natural_musical_reference():
+    result = _candidate_for_gate()
+
+    _apply_reference_gate(result, 800, 600)
+
+    assert result.detected
+    assert result.candidate_detected
+    assert result.rejection_reason is None
+    assert result.reference_score >= 0.45
+
+
+def test_reference_gate_rejects_localized_support():
+    result = _candidate_for_gate(spatial_span=0.12, spatial_bins=1)
+
+    _apply_reference_gate(result, 800, 600)
+
+    assert not result.detected
+    assert result.candidate_detected
+    assert result.rejection_reason == "insufficient_spatial_support"
+
+
+def test_reference_gate_rejects_visually_excessive_tilt():
+    result = _candidate_for_gate(angle_deg=11.0)
+
+    _apply_reference_gate(result, 800, 600)
+
+    assert not result.detected
+    assert result.rejection_reason == "excessive_tilt"
+
+
+def test_reference_gate_rejects_mostly_out_of_frame():
+    result = _candidate_for_gate(left_y=-300.0, right_y=100.0, angle_deg=1.0)
+
+    _apply_reference_gate(result, 800, 600)
+
+    assert not result.detected
+    assert result.rejection_reason == "mostly_out_of_frame"
