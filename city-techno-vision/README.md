@@ -64,9 +64,9 @@ uvicorn web.app:app --reload
 
 - 画像のdrag & drop / ファイル選択 → プレビュー → 解析する
 - Original画像とbbox（＋horizon）付きのDetected画像を横並び表示（狭い画面では縦積み）
-- Detection一覧（id / label / confidence / minx / miny / maxx / maxy）
+- Detection一覧（id / label / group / confidence / minx / miny / maxx / maxy。`group`が無いdetectionは「—」表示）
 - Horizonサマリー（`scene_geometry.horizon`がある場合のみ。`detected: false`はエラーではなく正常な結果として表示する）
-- fence検出時のみ表示される fence mask（折りたたみ表示）
+- 解析成功時は常に表示される fence mask（折りたたみ表示）
 - JSON / YAML をタブ表示、Copy / Download
 - 不正なファイル・解析失敗時のエラー表示（stack traceはそのまま出さない）
 
@@ -76,6 +76,12 @@ JSON・YAMLテキスト / 各アセットの取得URL（`GET /api/runs/{run_id}/
 アップロードのたびには読み込まない。一時ファイルはrunごとのディレクトリに
 書き出し、古いrun（既定30分）は次のリクエスト時に簡易cleanupされる
 （DB・ログイン・履歴なし）。
+
+Web版では SegFormer による fence detection は必須。モデルのロード失敗や
+推論失敗時に YOLO-only の結果を「解析成功」として返すことはせず、
+`/api/analyze` は 503 でエラーを返す（stack traceは返さない）。
+CLI（`detect.py`）は従来通り、fence検出が使えない場合はYOLO-onlyへ
+fallbackしてwarningを表示する。
 
 音楽生成、複数画像対応、ログイン、モデル選択UI、threshold変更UIはこのMVPには含まれない。
 

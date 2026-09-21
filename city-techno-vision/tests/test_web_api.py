@@ -19,6 +19,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import src.pipeline as pipeline_module
 import web.app as web_app
 from src.detector import Detection
 from src.export import build_result
@@ -145,11 +146,13 @@ def test_analyze_with_fence_mask_exposes_asset_url(tmp_path, monkeypatch):
 
 
 def test_analyze_reports_warnings(tmp_path, monkeypatch):
+    # Non-fatal warnings (unrelated to fence detection, which is required --
+    # see the FenceDetectionError tests below) should still pass through.
     monkeypatch.setattr(web_app, "RUNS_DIR", tmp_path / "runs")
     monkeypatch.setattr(
         web_app,
         "run_pipeline",
-        _fake_run_pipeline(warnings=["fence detection unavailable; continuing with YOLO-only results: network blocked"]),
+        _fake_run_pipeline(warnings=["example non-fatal notice for downstream consumers"]),
     )
     client = TestClient(web_app.app)
 
@@ -158,6 +161,64 @@ def test_analyze_reports_warnings(tmp_path, monkeypatch):
 
     assert response.status_code == 200
     assert len(response.json()["warnings"]) == 1
+
+
+class _StubObjectDetector:
+    """Stands in for ObjectDetector so these tests don't need ultralytics."""
+
+    def detect(self, image_path):
+        return [Detection(id=1, label="car", confidence=0.9, minx=1, maxx=10, miny=1, maxy=10)]
+
+
+class _FailingFenceDetector:
+    confidence_threshold = 0.5
+    min_area = 500
+
+    def predict_mask(self, image):
+        raise RuntimeError("segformer inference blew up")
+
+
+def test_analyze_fails_when_fence_model_unavailable(tmp_path, monkeypatch):
+    """Fence detection is required: a load failure must not be reported as
+    a successful YOLO-only analysis. It exercises the real run_pipeline
+    (not the web-level fake), with only the model cache mocked."""
+    monkeypatch.setattr(web_app, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(pipeline_module._MODEL_CACHE, "get_detector", lambda *a, **k: _StubObjectDetector())
+    monkeypatch.setattr(
+        pipeline_module._MODEL_CACHE,
+        "get_fence_detector",
+        lambda *a, **k: (None, "could not load fence model: huggingface.co blocked"),
+    )
+    client = TestClient(web_app.app)
+
+    files = {"image": ("photo.jpg", _valid_image_bytes("JPEG"), "image/jpeg")}
+    response = client.post("/api/analyze", files=files)
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert "fence detection" in detail.lower()
+    assert "Traceback" not in detail
+
+
+def test_analyze_fails_when_fence_inference_raises(tmp_path, monkeypatch):
+    """Fence detection is required: an inference-time failure must not
+    silently degrade to a YOLO-only success either."""
+    monkeypatch.setattr(web_app, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(pipeline_module._MODEL_CACHE, "get_detector", lambda *a, **k: _StubObjectDetector())
+    monkeypatch.setattr(
+        pipeline_module._MODEL_CACHE,
+        "get_fence_detector",
+        lambda *a, **k: (_FailingFenceDetector(), None),
+    )
+    client = TestClient(web_app.app)
+
+    files = {"image": ("photo.jpg", _valid_image_bytes("JPEG"), "image/jpeg")}
+    response = client.post("/api/analyze", files=files)
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert "fence detection" in detail.lower()
+    assert "Traceback" not in detail
 
 
 def test_analyze_rejects_unsupported_extension(client):

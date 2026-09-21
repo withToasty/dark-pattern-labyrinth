@@ -2,8 +2,15 @@
 
 Browser -> POST /api/analyze (multipart image) -> existing detection/fence/
 horizon pipeline (src/pipeline.py, shared with detect.py's CLI) -> annotated
-image + JSON + YAML (+ fence mask, if produced), all returned for display on
-one page. No new recognition logic lives here; see src/pipeline.py.
+image + JSON + YAML + fence mask, all returned for display on one page. No
+new recognition logic lives here; see src/pipeline.py.
+
+Fence detection (SegFormer) is required for a web analysis to succeed: a
+YOLO-only result is never reported back as a completed analysis. If the
+fence model can't be loaded or inference fails, /api/analyze responds with
+503 rather than silently falling back (see PipelineOptions.require_fence
+and FenceDetectionError in src/pipeline.py). This differs from detect.py's
+CLI, which still falls back to YOLO-only with a printed warning.
 
 Run locally with:
 
@@ -33,7 +40,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 
 from src.export import write_json, write_yaml
-from src.pipeline import PipelineOptions, run_pipeline
+from src.pipeline import FenceDetectionError, PipelineOptions, run_pipeline
 
 logger = logging.getLogger("city_techno_vision.web")
 
@@ -119,10 +126,22 @@ async def analyze(image: UploadFile = File(...)) -> JSONResponse:
     original_path.write_bytes(data)
 
     try:
-        pipeline_result = run_pipeline(original_path, PipelineOptions())
+        # Fence detection is required, not an optional extra: a YOLO-only
+        # result must not be reported back as a complete analysis.
+        pipeline_result = run_pipeline(original_path, PipelineOptions(require_fence=True))
     except ValueError as exc:
         shutil.rmtree(run_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail=str(exc))
+    except FenceDetectionError as exc:
+        logger.warning("fence detection unavailable for run %s: %s", run_id, exc)
+        shutil.rmtree(run_dir, ignore_errors=True)
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "analysis could not be completed: fence detection is required "
+                f"but unavailable ({exc})"
+            ),
+        )
     except Exception:
         logger.exception("analysis failed for run %s", run_id)
         shutil.rmtree(run_dir, ignore_errors=True)

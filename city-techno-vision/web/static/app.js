@@ -102,7 +102,8 @@
     noDetectionsMessage.hidden = true;
     for (const det of detections) {
       const row = document.createElement("tr");
-      const cells = [det.id, det.label, formatNumber(det.confidence, 4), det.minx, det.miny, det.maxx, det.maxy];
+      const group = det.group === undefined || det.group === null || det.group === "" ? "—" : det.group;
+      const cells = [det.id, det.label, group, formatNumber(det.confidence, 4), det.minx, det.miny, det.maxx, det.maxy];
       for (const value of cells) {
         const cell = document.createElement("td");
         cell.textContent = value;

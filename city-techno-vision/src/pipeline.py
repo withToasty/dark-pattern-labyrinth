@@ -37,6 +37,17 @@ class PipelineOptions:
     lens_mode: str = "auto"
     curve_strength: float | None = None
     enable_horizon: bool = True
+    # If true, fence detection (model load or inference) failing raises
+    # FenceDetectionError instead of falling back to YOLO-only with a
+    # warning. The CLI defaults to False (existing detect.py behavior); the
+    # web API sets this True, since a YOLO-only result must not be reported
+    # as a complete "detection + fence + horizon" analysis.
+    require_fence: bool = False
+
+
+class FenceDetectionError(RuntimeError):
+    """Fence detection was required (PipelineOptions.require_fence) but the
+    model failed to load or inference failed."""
 
 
 @dataclass
@@ -128,13 +139,24 @@ def run_pipeline(image_path: Path, options: PipelineOptions | None = None) -> Pi
     if options.fence_model:
         fence_detector, error = _MODEL_CACHE.get_fence_detector(options.fence_model)
         if fence_detector is None:
+            if options.require_fence:
+                raise FenceDetectionError(f"fence detection model unavailable: {error}")
             warnings.append(f"fence detection unavailable; continuing with YOLO-only results: {error}")
         else:
-            fence_mask = fence_detector.predict_mask(image)
-            fence_detections = mask_to_detections(
-                fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
-            )
-            detections = merge_detections(detections, fence_detections)
+            try:
+                fence_mask = fence_detector.predict_mask(image)
+            except Exception as exc:
+                if options.require_fence:
+                    raise FenceDetectionError(f"fence detection inference failed: {exc}") from exc
+                warnings.append(f"fence detection failed; continuing with YOLO-only results: {exc}")
+                fence_mask = None
+            else:
+                fence_detections = mask_to_detections(
+                    fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
+                )
+                detections = merge_detections(detections, fence_detections)
+    elif options.require_fence:
+        raise FenceDetectionError("fence detection is required but no fence model was configured")
 
     camera = read_camera_metadata(image_path)
     effective_lens_mode = camera.lens_mode if options.lens_mode == "auto" else options.lens_mode
