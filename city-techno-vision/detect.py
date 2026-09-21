@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
-"""Detect objects in an image and export the results.
+"""Detect objects and scene geometry in an image and export the results.
 
     python detect.py --image path/to/photo.jpg --output-dir output/
 
 Produces, in --output-dir:
-  <name>_detected<ext>   the input image with bounding boxes drawn on it
-  detections.json        structured detection results
+  <name>_detected<ext>   boxes + geometric horizon drawn on the input image
+  detections.json        structured detection + scene-geometry results
   detections.yaml        the same results, as YAML
 
-This is the image-recognition step only: image in, boxes + labels +
-confidences out. Turning that into sound (object-to-sound mapping,
-BPM, pitch, rhythm, MIDI/audio generation) is a separate project and
-does not belong here.
+Turning these results into sound is a separate project and does not belong here.
 """
 
 from __future__ import annotations
@@ -24,7 +21,8 @@ import cv2
 from src.detector import DEFAULT_CITY_CLASSES, ObjectDetector, merge_detections
 from src.export import build_result, write_json, write_yaml
 from src.fence_detector import DEFAULT_FENCE_MODEL_ID, FenceDetector, mask_to_detections
-from src.visualize import draw_detections
+from src.horizon import estimate_horizon
+from src.visualize import draw_detections, draw_horizon
 
 
 def parse_args() -> argparse.Namespace:
@@ -55,6 +53,11 @@ def parse_args() -> argparse.Namespace:
         "'building,sky,cloud,fence,car'. Only works with an open-vocabulary "
         "(YOLO-World) --model; ignored/invalid otherwise. If omitted while "
         "using a world model, falls back to a built-in city-scene vocabulary.",
+    )
+    parser.add_argument(
+        "--no-horizon",
+        action="store_true",
+        help="disable geometric horizon estimation",
     )
     return parser.parse_args()
 
@@ -99,17 +102,34 @@ def main() -> None:
             print(f"fence detections   -> {len(fence_detections)}")
             print(f"fence mask         -> {mask_path}")
 
+    horizon = None if args.no_horizon else estimate_horizon(image)
+
     annotated = draw_detections(image, detections)
+    if horizon is not None:
+        annotated = draw_horizon(annotated, horizon)
     annotated_path = output_dir / f"{image_path.stem}_detected{image_path.suffix}"
     cv2.imwrite(str(annotated_path), annotated)
 
     result = build_result(image_path.name, width, height, detections)
+    if horizon is not None:
+        result["scene_geometry"] = {"horizon": horizon.to_dict()}
+
     json_path = output_dir / "detections.json"
     yaml_path = output_dir / "detections.yaml"
     write_json(result, json_path)
     write_yaml(result, yaml_path)
 
     print(f"detected {len(detections)} object(s)")
+    if horizon is not None:
+        if horizon.detected:
+            print(
+                "horizon           -> "
+                f"center_y={horizon.center_y:.1f}, "
+                f"slope={horizon.slope:.4f}, "
+                f"confidence={horizon.confidence:.3f}"
+            )
+        else:
+            print("horizon           -> not detected")
     print(f"annotated image -> {annotated_path}")
     print(f"json             -> {json_path}")
     print(f"yaml             -> {yaml_path}")
