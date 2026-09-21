@@ -1,0 +1,89 @@
+name: city-techno-vision horizon validation
+
+on:
+  push:
+    branches:
+      - feature/horizon-detection
+    paths:
+      - "city-techno-vision/src/horizon.py"
+      - "city-techno-vision/src/visualize.py"
+      - "city-techno-vision/detect.py"
+      - "city-techno-vision/tests/test_horizon.py"
+      - ".github/workflows/horizon-validation.yml"
+  pull_request:
+    paths:
+      - "city-techno-vision/src/horizon.py"
+      - "city-techno-vision/src/visualize.py"
+      - "city-techno-vision/detect.py"
+      - "city-techno-vision/tests/test_horizon.py"
+      - ".github/workflows/horizon-validation.yml"
+  workflow_dispatch:
+
+jobs:
+  validate-horizon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lightweight test dependencies
+        run: |
+          pip install pytest numpy opencv-python-headless
+
+      - name: Run horizon tests
+        working-directory: city-techno-vision
+        run: |
+          pytest -q tests/test_horizon.py
+
+      - name: Generate synthetic horizon demo
+        working-directory: city-techno-vision
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import cv2
+          import numpy as np
+          from src.horizon import estimate_horizon
+          from src.visualize import draw_horizon
+
+          height, width = 600, 800
+          image = np.zeros((height, width, 3), dtype=np.uint8)
+          left_vp = np.array([-500.0, 280.0])
+          right_vp = np.array([1300.0, 320.0])
+          anchors = [(100, 500), (200, 420), (300, 520), (500, 460), (650, 520), (700, 400)]
+
+          for vp in (left_vp, right_vp):
+              for ax, ay in anchors:
+                  anchor = np.array([ax, ay], dtype=float)
+                  direction = vp - anchor
+                  direction /= np.linalg.norm(direction)
+                  start = anchor - 100 * direction
+                  end = anchor + 100 * direction
+                  cv2.line(
+                      image,
+                      tuple(np.round(start).astype(int)),
+                      tuple(np.round(end).astype(int)),
+                      (255, 255, 255),
+                      3,
+                  )
+
+          result = estimate_horizon(image)
+          out = Path("/tmp/horizon-output")
+          out.mkdir(parents=True, exist_ok=True)
+          cv2.imwrite(str(out / "synthetic_horizon.png"), draw_horizon(image, result))
+          (out / "horizon_result.json").write_text(
+              json.dumps(result.to_dict(), indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(result.to_dict(), indent=2))
+          PY
+
+      - name: Upload demo
+        uses: actions/upload-artifact@v4
+        with:
+          name: horizon-validation-output
+          path: /tmp/horizon-output/
