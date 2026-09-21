@@ -1,4 +1,4 @@
-name: city-techno-vision horizon validation
+name: city-techno-vision confidence validation
 
 permissions:
   contents: write
@@ -8,22 +8,11 @@ on:
     branches:
       - feature/horizon-detection
     paths:
-      - "city-techno-vision/src/horizon.py"
-      - "city-techno-vision/src/visualize.py"
-      - "city-techno-vision/detect.py"
-      - "city-techno-vision/tests/test_horizon.py"
-      - ".github/workflows/horizon-validation.yml"
-  pull_request:
-    paths:
-      - "city-techno-vision/src/horizon.py"
-      - "city-techno-vision/src/visualize.py"
-      - "city-techno-vision/detect.py"
-      - "city-techno-vision/tests/test_horizon.py"
       - ".github/workflows/horizon-validation.yml"
   workflow_dispatch:
 
 jobs:
-  validate-horizon:
+  compare-confidence:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -33,87 +22,85 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install lightweight test dependencies
+      - name: Install YOLO dependencies
         run: |
-          pip install pytest numpy opencv-python-headless
+          pip install ultralytics opencv-python-headless
 
-      - name: Run horizon tests
-        working-directory: city-techno-vision
-        run: |
-          pytest -q tests/test_horizon.py
-
-      - name: Recover and test previous Kobe photo
-        working-directory: city-techno-vision
+      - name: Recover exact Kobe source photo
         run: |
           git fetch origin 1c14c9e972de20285f802da48a5e55a676ed57a3 --depth=1
           git show FETCH_HEAD:city-techno-vision/tests/fixtures/kobe_fence_test.jpg > /tmp/kobe_fence_test.jpg
+          file /tmp/kobe_fence_test.jpg
+
+      - name: Compare YOLO confidence thresholds
+        working-directory: city-techno-vision
+        run: |
           python - <<'PY'
           import json
+          from collections import Counter
           from pathlib import Path
-          import cv2
-          from src.horizon import estimate_horizon
-          from src.visualize import draw_horizon
 
-          original = cv2.imread("/tmp/kobe_fence_test.jpg")
-          assert original is not None
-          h, w = original.shape[:2]
-          scale = min(1.0, 1000.0 / max(w, h))
-          working = cv2.resize(
-              original,
-              (round(w * scale), round(h * scale)),
-              interpolation=cv2.INTER_AREA,
-          )
-          result = estimate_horizon(working)
+          from ultralytics import YOLO
 
-          if result.detected:
-              result.left_y /= scale
-              result.right_y /= scale
-              result.center_y /= scale
-              result.center_y_normalized = result.center_y / h
-              for vp in result.vanishing_points or []:
-                  vp.x /= scale
-                  vp.y /= scale
+          image = "/tmp/kobe_fence_test.jpg"
+          model = YOLO("yolov8n-oiv7.pt")
+          result = model.predict(source=image, conf=0.01, verbose=False)[0]
+          names = result.names
 
-          data = result.to_dict()
-          data["validation"] = {
+          raw = []
+          for box in result.boxes:
+              cls_id = int(box.cls.item())
+              confidence = float(box.conf.item())
+              xyxy = [round(float(v), 1) for v in box.xyxy[0].tolist()]
+              raw.append({
+                  "label": names[cls_id],
+                  "confidence": round(confidence, 4),
+                  "xyxy": xyxy,
+              })
+          raw.sort(key=lambda item: item["confidence"], reverse=True)
+
+          thresholds = [0.10, 0.15, 0.20, 0.25]
+          comparisons = {}
+          for threshold in thresholds:
+              kept = [item for item in raw if item["confidence"] >= threshold]
+              cars = [item for item in kept if item["label"].casefold() == "car"]
+              comparisons[f"{threshold:.2f}"] = {
+                  "total": len(kept),
+                  "labels": dict(Counter(item["label"] for item in kept)),
+                  "cars": cars,
+              }
+
+          car_candidates = [
+              item for item in raw if item["label"].casefold() == "car"
+          ]
+
+          data = {
+              "model": "yolov8n-oiv7.pt",
               "source": "city-techno-vision/tests/fixtures/kobe_fence_test.jpg",
               "source_commit": "1c14c9e972de20285f802da48a5e55a676ed57a3",
-              "original_width": w,
-              "original_height": h,
-              "analysis_scale": scale,
-              "analysis_width": working.shape[1],
-              "analysis_height": working.shape[0],
+              "inference_floor": 0.01,
+              "car_candidates": car_candidates,
+              "thresholds": comparisons,
+              "all_predictions": raw,
           }
 
           out = Path("validation")
           out.mkdir(exist_ok=True)
-          (out / "kobe_horizon_result.json").write_text(
+          (out / "kobe_confidence_comparison.json").write_text(
               json.dumps(data, indent=2) + "\n",
               encoding="utf-8",
           )
 
-          rendered = draw_horizon(original, result)
-          cv2.imwrite(str(out / "kobe_horizon_result.jpg"), rendered)
-
-          print("KOBE_RESULT")
-          print(json.dumps(data, indent=2))
+          print(json.dumps({
+              "car_candidates": car_candidates,
+              "thresholds": comparisons,
+          }, indent=2))
           PY
 
-      - name: Commit Kobe validation result
-        if: github.event_name == 'push'
+      - name: Commit comparison result
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add city-techno-vision/validation/kobe_horizon_result.json city-techno-vision/validation/kobe_horizon_result.jpg
-          if git diff --cached --quiet; then
-            echo "No validation changes"
-          else
-            git commit -m "Record Kobe horizon validation result"
-            git push
-          fi
-
-      - name: Upload validation output
-        uses: actions/upload-artifact@v4
-        with:
-          name: horizon-validation-output
-          path: city-techno-vision/validation/
+          git add city-techno-vision/validation/kobe_confidence_comparison.json
+          git commit -m "Record Kobe confidence comparison"
+          git push
