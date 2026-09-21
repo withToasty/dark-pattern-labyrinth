@@ -4,7 +4,7 @@
     python detect.py --image path/to/photo.jpg --output-dir output/
 
 Produces, in --output-dir:
-  <name>_detected<ext>   boxes + geometric horizon drawn on the input image
+  <name>_detected<ext>   boxes + reference horizon drawn on the input image
   detections.json        structured detection + scene-geometry results
   detections.yaml        the same results, as YAML
 
@@ -72,7 +72,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-horizon",
         action="store_true",
-        help="disable geometric horizon estimation",
+        help="disable reference horizon estimation",
     )
     return parser.parse_args()
 
@@ -182,7 +182,8 @@ def main() -> None:
             else:
                 print("horizon curve     -> unavailable (no distortion hint/calibration)")
         else:
-            print("horizon           -> not detected")
+            reason = horizon.rejection_reason or "no stable candidate"
+            print(f"horizon           -> not detected ({reason})")
     print(f"annotated image -> {annotated_path}")
     print(f"json             -> {json_path}")
     print(f"yaml             -> {yaml_path}")
