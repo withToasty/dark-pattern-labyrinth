@@ -23,7 +23,7 @@ import cv2
 
 from src.detector import DEFAULT_CITY_CLASSES, ObjectDetector, merge_detections
 from src.export import build_result, write_json, write_yaml
-from src.fence_detector import FenceDetector, mask_to_detections
+from src.fence_detector import DEFAULT_FENCE_MODEL_ID, FenceDetector, mask_to_detections
 from src.visualize import draw_detections
 
 
@@ -42,12 +42,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--conf", type=float, default=0.25, help="confidence threshold (default: 0.25)")
     parser.add_argument(
         "--fence-model",
-        default=None,
+        default=DEFAULT_FENCE_MODEL_ID,
         help="Hugging Face model id or local path for the fence-segmentation "
-        "model (default when enabled: nvidia/segformer-b0-finetuned-cityscapes-"
-        "1024-1024, see src/fence_detector.py). Adds an independent "
-        "fence-detection path merged into the same detections list. Omit to "
-        "run the general detector only (default).",
+        "model (default: nvidia/segformer-b0-finetuned-cityscapes-"
+        "1024-1024, see src/fence_detector.py). Fence detection runs by default "
+        "and is merged into the same detections list.",
     )
     parser.add_argument(
         "--classes",
