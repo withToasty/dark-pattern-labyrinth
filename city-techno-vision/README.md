@@ -37,7 +37,7 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--image` | (必須) | 入力画像のパス |
 | `--output-dir` | `output/` | 出力先ディレクトリ |
 | `--model` | `yolov8n-oiv7.pt` | 使用するUltralytics YOLOモデル/重みファイル |
-| `--conf` | `0.25` | 検出の信頼度しきい値 |
+| `--conf` | `0.15` | 検出の信頼度しきい値。神戸の実写検証では0.25だと車系が落ち、0.15で2台の `Land vehicle` を保持できた |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
 | `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
 | `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
@@ -142,6 +142,10 @@ python detect.py --image photo.jpg --model yolov8s-worldv2.pt \
 - `detections.yaml`
 - fence検出時: `fence_mask.png`
 
+### 車系ラベルの扱い
+
+Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として強く検出されることがある。元の `label` はそのまま保持しつつ、`Car` / `Land vehicle` / `Truck` / `Bus` / `Motorcycle` は出力時に `group: road_vehicle` を追加する。音生成側は必要ならこの `group` を使って同じ車系として扱える。
+
 ### 座標系
 
 - 原点は画像左上
@@ -160,8 +164,9 @@ python detect.py --image photo.jpg --model yolov8s-worldv2.pt \
   "detections": [
     {
       "id": 1,
-      "label": "car",
-      "confidence": 0.94,
+      "label": "Land vehicle",
+      "group": "road_vehicle",
+      "confidence": 0.19,
       "minx": 210,
       "maxx": 540,
       "miny": 620,
