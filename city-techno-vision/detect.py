@@ -18,10 +18,11 @@ from pathlib import Path
 
 import cv2
 
+from src.camera_metadata import read_camera_metadata
 from src.detector import DEFAULT_CITY_CLASSES, ObjectDetector, merge_detections
 from src.export import build_result, write_json, write_yaml
 from src.fence_detector import DEFAULT_FENCE_MODEL_ID, FenceDetector, mask_to_detections
-from src.horizon import estimate_horizon
+from src.horizon import DistortionSpec, estimate_horizon, generic_ultrawide_distortion
 from src.visualize import draw_detections, draw_horizon
 
 
@@ -53,6 +54,20 @@ def parse_args() -> argparse.Namespace:
         "'building,sky,cloud,fence,car'. Only works with an open-vocabulary "
         "(YOLO-World) --model; ignored/invalid otherwise. If omitted while "
         "using a world model, falls back to a built-in city-scene vocabulary.",
+    )
+    parser.add_argument(
+        "--lens-mode",
+        choices=("auto", "ultrawide", "standard"),
+        default="auto",
+        help="lens geometry hint for the curved horizon. auto uses EXIF when available; "
+        "ultrawide enables a clearly-labelled generic approximation; standard disables it",
+    )
+    parser.add_argument(
+        "--curve-strength",
+        type=float,
+        default=None,
+        help="manual parabolic curve strength as a fraction of image height; "
+        "always exported as an approximation, never as measured calibration",
     )
     parser.add_argument(
         "--no-horizon",
@@ -102,7 +117,32 @@ def main() -> None:
             print(f"fence detections   -> {len(fence_detections)}")
             print(f"fence mask         -> {mask_path}")
 
-    horizon = None if args.no_horizon else estimate_horizon(image)
+    camera = read_camera_metadata(image_path)
+    effective_lens_mode = camera.lens_mode if args.lens_mode == "auto" else args.lens_mode
+    distortion = None
+    if args.curve_strength is not None:
+        distortion = DistortionSpec(
+            source="manual_curve_strength",
+            curve_strength=args.curve_strength,
+            is_approximation=True,
+            basis="--curve-strength",
+        )
+    elif effective_lens_mode == "ultrawide":
+        if args.lens_mode == "auto":
+            if camera.focal_length_35mm is not None:
+                basis = f"EXIF focal_length_35mm={camera.focal_length_35mm:g}"
+            elif camera.lens_model:
+                basis = f"EXIF lens_model={camera.lens_model}"
+            else:
+                basis = "EXIF ultrawide hint"
+            distortion = generic_ultrawide_distortion("exif_heuristic", basis=basis)
+        else:
+            distortion = generic_ultrawide_distortion(
+                "manual_lens_mode",
+                basis="--lens-mode ultrawide",
+            )
+
+    horizon = None if args.no_horizon else estimate_horizon(image, distortion=distortion)
 
     annotated = draw_detections(image, detections)
     if horizon is not None:
@@ -111,6 +151,10 @@ def main() -> None:
     cv2.imwrite(str(annotated_path), annotated)
 
     result = build_result(image_path.name, width, height, detections)
+    camera_data = camera.to_dict()
+    camera_data["lens_mode_effective"] = effective_lens_mode
+    camera_data["lens_mode_source"] = "exif" if args.lens_mode == "auto" else "manual"
+    result["image"]["camera"] = camera_data
     if horizon is not None:
         result["scene_geometry"] = {"horizon": horizon.to_dict()}
 
@@ -128,6 +172,15 @@ def main() -> None:
                 f"slope={horizon.slope:.4f}, "
                 f"confidence={horizon.confidence:.3f}"
             )
+            if horizon.distortion is not None:
+                print(
+                    "horizon curve     -> "
+                    f"{horizon.distortion.model}, "
+                    f"source={horizon.distortion.source}, "
+                    f"approximation={horizon.distortion.is_approximation}"
+                )
+            else:
+                print("horizon curve     -> unavailable (no distortion hint/calibration)")
         else:
             print("horizon           -> not detected")
     print(f"annotated image -> {annotated_path}")
