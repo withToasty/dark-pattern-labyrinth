@@ -20,6 +20,9 @@ on:
 
 jobs:
   validate-fence-detection:
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -94,6 +97,37 @@ jobs:
           else
             echo "status: failed (see previous step logs)"
           fi
+
+      - name: Post conf 0.10 result to temporary issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          python - <<'EOF'
+          import json, os
+          path = "/tmp/fence-output/detections.json"
+          lines = [
+              "## conf=0.10 validation",
+              f"run_id: {os.environ.get('RUN_ID')}",
+          ]
+          if os.path.exists(path):
+              with open(path) as f:
+                  result = json.load(f)
+              lines.append(f"total detections: {len(result['detections'])}")
+              lines.append("")
+              lines.append("| label | confidence | minx | maxx | miny | maxy |")
+              lines.append("|---|---:|---:|---:|---:|---:|")
+              for d in result["detections"]:
+                  lines.append(
+                      f"| {d['label']} | {d['confidence']} | {d['minx']} | {d['maxx']} | {d['miny']} | {d['maxy']} |"
+                  )
+          else:
+              lines.append("detections.json not generated")
+          with open("/tmp/conf010-summary.md", "w") as f:
+              f.write("\n".join(lines))
+          EOF
+          gh issue comment 15 --repo withToasty/dark-pattern-labyrinth --body-file /tmp/conf010-summary.md
 
       - name: Upload artifacts
         if: steps.image.outputs.blocked == 'false'
