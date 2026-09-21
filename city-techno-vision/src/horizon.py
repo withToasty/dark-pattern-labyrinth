@@ -27,8 +27,7 @@ MAX_VP_LINES = 120
 # Number of x,y samples used to describe the wide-angle distorted curve.
 NUM_DISTORTED_POINTS = 7
 # Generic ultra-wide bulge size used only when explicitly selected or inferred from metadata.
-GENERIC_ULTRAWIDE_CURVE_STRENGTH = 0.015
-
+GENERIC_ULTRAWIDE_CURVE_STRENGTH = 0.015\n\n# Musical-reference horizon gate. The goal is not physical survey accuracy;\n# it is to avoid visually implausible reference lines that would distort\n# downstream object-to-horizon distance features.\nMAX_REFERENCE_ANGLE_DEG = 8.0\nMIN_REFERENCE_SPATIAL_SPAN = 0.35\nMIN_REFERENCE_SPATIAL_BINS = 2\nMIN_REFERENCE_IN_FRAME_FRACTION = 0.60\nMIN_REFERENCE_SCORE = 0.45\n
 
 @dataclass(frozen=True)
 class DistortionSpec:
@@ -73,8 +72,7 @@ class HorizonResult:
     height: float | None = None
     distortion: DistortionSpec | None = None
     orientation_source: str | None = None
-    vertical_vanishing_point: VanishingPoint | None = None
-
+    vertical_vanishing_point: VanishingPoint | None = None\n    role: str = "musical_reference"\n    candidate_detected: bool = False\n    reference_score: float = 0.0\n    spatial_support_span: float = 0.0\n    spatial_support_bins: int = 0\n    in_frame_fraction: float = 0.0\n    rejection_reason: str | None = None\n
     def rectified_dict(self) -> dict | None:
         """Geometric straight-line horizon (the original single-layer output)."""
         if not self.detected or self.left_y is None or self.right_y is None or self.center_y is None:
@@ -132,8 +130,7 @@ class HorizonResult:
         data = {
             "detected": self.detected,
             "method": self.method,
-            "confidence": round(float(self.confidence), 4),
-            "supporting_lines": self.supporting_lines,
+            "role": self.role,\n            "confidence": round(float(self.confidence), 4),\n            "candidate_detected": self.candidate_detected,\n            "reference_score": round(float(self.reference_score), 4),\n            "spatial_support_span": round(float(self.spatial_support_span), 4),\n            "spatial_support_bins": self.spatial_support_bins,\n            "in_frame_fraction": round(float(self.in_frame_fraction), 4),\n            "rejection_reason": self.rejection_reason,\n            "supporting_lines": self.supporting_lines,
             "orientation_source": self.orientation_source,
             "vanishing_points": None,
             "vertical_vanishing_point": None,
@@ -327,6 +324,108 @@ def _best_vanishing_point(
     return best_point, best_inliers, best_score, selected_lines, selected_lengths
 
 
+def _support_spatial_metrics(
+    lines: list[tuple[float, float, float, float]],
+    inliers: np.ndarray,
+    width: int,
+) -> tuple[float, int]:
+    """Return horizontal spread of the lines supporting a horizon candidate."""
+    if len(lines) == 0 or len(inliers) == 0:
+        return 0.0, 0
+
+    midpoints = []
+    for line, keep in zip(lines, inliers):
+        if not keep:
+            continue
+        x1, _, x2, _ = line
+        midpoints.append((x1 + x2) / 2)
+
+    if not midpoints:
+        return 0.0, 0
+
+    span = (max(midpoints) - min(midpoints)) / max(width - 1, 1)
+    bins = set()
+    for x in midpoints:
+        normalized = min(0.999999, max(0.0, x / max(width, 1)))
+        bins.add(int(normalized * 4))
+    return max(0.0, min(1.0, span)), len(bins)
+
+
+def _reference_in_frame_fraction(
+    left_y: float,
+    right_y: float,
+    width: int,
+    height: int,
+    samples: int = 9,
+) -> float:
+    if samples <= 1:
+        samples = 2
+    inside = 0
+    for index in range(samples):
+        x_ratio = index / (samples - 1)
+        y = left_y + (right_y - left_y) * x_ratio
+        if 0 <= y < height:
+            inside += 1
+    return inside / samples
+
+
+def _apply_reference_gate(
+    result: HorizonResult,
+    width: int,
+    height: int,
+) -> HorizonResult:
+    """Accept only horizon candidates that make a stable musical reference.
+
+    This gate intentionally prefers "no horizon" over a mathematically neat but
+    visually strange line. It does not claim physical ground-truth accuracy.
+    """
+    if not result.detected:
+        return result
+
+    result.candidate_detected = True
+    result.in_frame_fraction = _reference_in_frame_fraction(
+        float(result.left_y),
+        float(result.right_y),
+        width,
+        height,
+    )
+
+    angle = abs(float(result.angle_deg or 0.0))
+    angle_factor = max(0.0, 1.0 - angle / MAX_REFERENCE_ANGLE_DEG)
+    spatial_factor = min(1.0, result.spatial_support_span / 0.60)
+    bins_factor = min(1.0, result.spatial_support_bins / 3.0)
+    in_frame_factor = result.in_frame_fraction
+
+    result.reference_score = max(
+        0.0,
+        min(
+            1.0,
+            0.35 * result.confidence
+            + 0.25 * spatial_factor
+            + 0.15 * bins_factor
+            + 0.15 * in_frame_factor
+            + 0.10 * angle_factor,
+        ),
+    )
+
+    reason = None
+    if angle > MAX_REFERENCE_ANGLE_DEG:
+        reason = "excessive_tilt"
+    elif result.in_frame_fraction < MIN_REFERENCE_IN_FRAME_FRACTION:
+        reason = "mostly_out_of_frame"
+    elif result.spatial_support_span < MIN_REFERENCE_SPATIAL_SPAN:
+        reason = "insufficient_spatial_support"
+    elif result.spatial_support_bins < MIN_REFERENCE_SPATIAL_BINS:
+        reason = "localized_support"
+    elif result.reference_score < MIN_REFERENCE_SCORE:
+        reason = "low_reference_score"
+
+    if reason is not None:
+        result.detected = False
+        result.rejection_reason = reason
+    return result
+
+
 def _extract_segments(image: np.ndarray) -> list[tuple[float, float, float, float]]:
     height, width = image.shape[:2]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image.copy()
@@ -471,11 +570,7 @@ def _vertical_guided_horizon(
     if not (-0.25 * height <= center_y <= 1.25 * height):
         return HorizonResult(detected=False)
 
-    horizontal_support = float(
-        horizontal_lengths[horizontal_inliers].sum()
-        / max(horizontal_lengths.sum(), 1.0)
-    )
-    horizontal_count_factor = min(1.0, int(horizontal_inliers.sum()) / 10.0)
+    horizontal_support = float(\n        horizontal_lengths[horizontal_inliers].sum()\n        / max(horizontal_lengths.sum(), 1.0)\n    )\n    spatial_span, spatial_bins = _support_spatial_metrics(\n        horizontal_candidates if len(horizontal_candidates) <= MAX_VP_LINES else [horizontal_candidates[i] for i in np.argsort(-np.array([_line_length(line) for line in horizontal_candidates]))[:MAX_VP_LINES]],\n        horizontal_inliers,\n        width,\n    )\n    horizontal_count_factor = min(1.0, int(horizontal_inliers.sum()) / 10.0)
     vertical_count_factor = min(1.0, orientation_count / 10.0)
     confidence = (
         0.40 * horizontal_support
@@ -504,9 +599,7 @@ def _vertical_guided_horizon(
             )
         ],
         orientation_source=orientation_source,
-        vertical_vanishing_point=vertical_vp,
-    )
-
+        vertical_vanishing_point=vertical_vp,\n        spatial_support_span=spatial_span,\n        spatial_support_bins=spatial_bins,\n    )\n
 def _two_vanishing_point_horizon(
     segments: list[tuple[float, float, float, float]],
     width: int,
@@ -546,8 +639,7 @@ def _two_vanishing_point_horizon(
             supporting_lines=int(first_inliers.sum() + second_inliers.sum()),
         )
 
-    support_mask = first_inliers | second_inliers
-    coverage = float(selected_lengths[support_mask].sum() / max(selected_lengths.sum(), 1.0))
+    support_mask = first_inliers | second_inliers\n    spatial_span, spatial_bins = _support_spatial_metrics(\n        selected_lines, support_mask, width\n    )\n    coverage = float(selected_lengths[support_mask].sum() / max(selected_lengths.sum(), 1.0))
     first_count = int(first_inliers.sum())
     second_count = int(second_inliers.sum())
     balance = min(first_count, second_count) / max(first_count, second_count, 1)
@@ -571,9 +663,7 @@ def _two_vanishing_point_horizon(
         slope=slope,
         angle_deg=math.degrees(math.atan(slope)),
         supporting_lines=int(support_mask.sum()),
-        vanishing_points=points,
-    )
-
+        vanishing_points=points,\n        spatial_support_span=spatial_span,\n        spatial_support_bins=spatial_bins,\n    )\n
 
 def _rescale_result(
     result: HorizonResult, scale: float, original_width: int, original_height: int
@@ -630,9 +720,27 @@ def estimate_horizon(
     if len(segments) < 6:
         return HorizonResult(detected=False, supporting_lines=len(segments))
 
-    result = _vertical_guided_horizon(segments, width, height)
-    if not result.detected:
-        result = _two_vanishing_point_horizon(segments, width, height)
+    candidates = [
+        _vertical_guided_horizon(segments, width, height),
+        _two_vanishing_point_horizon(segments, width, height),
+    ]
+
+    evaluated: list[HorizonResult] = []
+    for candidate in candidates:
+        if candidate.detected:
+            _apply_reference_gate(candidate, width, height)
+        evaluated.append(candidate)
+
+    accepted = [candidate for candidate in evaluated if candidate.detected]
+    if accepted:
+        result = max(accepted, key=lambda item: item.reference_score)
+    else:
+        rejected = [candidate for candidate in evaluated if candidate.candidate_detected]
+        if rejected:
+            result = max(rejected, key=lambda item: item.reference_score)
+            result.rejection_reason = result.rejection_reason or "no_natural_reference_candidate"
+        else:
+            result = max(evaluated, key=lambda item: item.supporting_lines)
 
     result = _rescale_result(result, scale, original_width, original_height)
     if result.detected:
