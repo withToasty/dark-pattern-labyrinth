@@ -222,7 +222,9 @@ def _extract_segments(image: np.ndarray) -> list[tuple[float, float, float, floa
 
     segments: list[tuple[float, float, float, float]] = []
     minimum_length = 0.06 * diagonal
-    for raw in raw_lines[:, 0, :]:
+    # OpenCV 4 commonly returns (N, 1, 4), while newer builds may return (N, 4).
+    # Reshape both forms into a stable list of x1,y1,x2,y2 rows.
+    for raw in np.asarray(raw_lines).reshape(-1, 4):
         line = tuple(float(value) for value in raw)
         if _line_length(line) >= minimum_length:
             segments.append(line)
