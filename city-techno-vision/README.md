@@ -7,9 +7,9 @@ City Techno プロジェクトの「画像認識」部分のみを実装した�
 ```
 画像
  ↓
-物体検出
+物体検出 + 幾何学的な地平線推定
  ↓
-枠線付き画像 ＋ JSON / YAML
+枠線・地平線付き画像 ＋ JSON / YAML
 ```
 
 音（物体と音の対応、BPM、音程、リズム、MIDI/音声生成など）への変換は
@@ -40,6 +40,7 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--conf` | `0.25` | 検出の信頼度しきい値 |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
 | `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
+| `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
 
 ## モデルについて（Open Images V7 vs COCO）
 
@@ -86,6 +87,35 @@ python detect.py --image photo.jpg \
 実モデル + 実写真による end-to-end 検証は GitHub Actions で成功済み。
 通常YOLO検出、SegFormer推論、`fence_mask.png`、fence bbox、
 annotated image、JSON/YAML出力まで確認している。
+
+### 幾何学的な地平線
+
+`src/horizon.py` で、画像内の長い線分から消失点を推定し、
+2つの支配的な消失点を結んで幾何学的な地平線を求める。
+
+```text
+image
+→ Canny
+→ Hough line segments
+→ dominant vanishing point A
+→ dominant vanishing point B
+→ horizon line
+```
+
+外部AIモデルは使わず、OpenCVのみで動く。
+道路・建物など直線が多い都市景観を主対象とし、
+十分な幾何情報がない場合は無理に線を作らず `detected: false` を返す。
+
+主な出力：
+
+- `left_y`: 画像左端での地平線y座標
+- `right_y`: 画像右端での地平線y座標
+- `center_y`: 画像中央での地平線y座標
+- `center_y_normalized`: 高さを画像高で0〜1相当に正規化した値
+- `slope`: 地平線の傾き
+- `angle_deg`: 傾きを角度で表した値
+- `confidence`: 線分の支持率などから計算した信頼度
+- `vanishing_points`: 検証用の消失点座標
 
 ## 検出対象を増やす（open-vocabulary detection）
 
@@ -137,7 +167,25 @@ python detect.py --image photo.jpg --model yolov8s-worldv2.pt \
       "miny": 620,
       "maxy": 850
     }
-  ]
+  ],
+  "scene_geometry": {
+    "horizon": {
+      "detected": true,
+      "method": "line_vanishing_points",
+      "confidence": 0.81,
+      "left_y": 492.3,
+      "right_y": 510.8,
+      "center_y": 501.6,
+      "center_y_normalized": 0.4644,
+      "slope": 0.0096,
+      "angle_deg": 0.55,
+      "supporting_lines": 14,
+      "vanishing_points": [
+        {"x": -1120.4, "y": 481.5, "supporting_lines": 7},
+        {"x": 2540.1, "y": 516.7, "supporting_lines": 7}
+      ]
+    }
+  }
 }
 ```
 
@@ -149,14 +197,21 @@ city-techno-vision/
   src/
     detector.py
     fence_detector.py
+    horizon.py
     visualize.py
     export.py
   tests/
     test_fence_detector.py
+    test_horizon.py
   requirements.txt
 ```
 
 ## 既知の制約
+
+地平線推定は、道路・建物など複数方向の直線がある都市景観で最も安定する。
+森・空・海だけの画像や、直線がほぼない画像では `detected: false` になることがある。
+将来、iPhone専用カメラで撮影時の姿勢センサー値を保存できれば、
+そちらを優先し、この画像推定をfallbackにする想定。
 
 `--classes`（YOLO-World）は、開発時のサンドボックスではCLIPの初回取得先が
 ネットワークポリシーでブロックされ、実検出までは未確認。
