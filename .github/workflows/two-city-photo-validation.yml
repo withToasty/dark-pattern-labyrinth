@@ -9,6 +9,8 @@ on:
       - test/two-new-city-photos
     paths:
       - ".github/workflows/two-city-photo-validation.yml"
+      - "city-techno-vision/tests/fixtures/user_city_4059.jpg"
+      - "city-techno-vision/tests/fixtures/user_city_3998.jpg"
   workflow_dispatch:
 
 jobs:
@@ -22,9 +24,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install detector dependencies
+      - name: Install CPU detector dependencies
         working-directory: city-techno-vision
         run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
           pip install ultralytics opencv-python-headless PyYAML
 
       - name: Analyze IMG_4059
@@ -65,8 +68,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add city-techno-vision/validation/user_city_4059 city-techno-vision/validation/user_city_3998
-          git commit -m "Record two-city-photo validation"
-          git push
+          if git diff --cached --quiet; then
+            echo "No output changes"
+          else
+            git commit -m "Record two-city-photo validation"
+            git push
+          fi
 
       - name: Upload validation artifact
         uses: actions/upload-artifact@v4
