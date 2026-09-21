@@ -59,7 +59,7 @@ def _tag(exif, exif_ifd: dict, tag_id: int):
     return exif_ifd.get(tag_id)
 
 
-def _infer_lens_mode(
+def infer_lens_mode(
     lens_model: str | None,
     focal_length_35mm: float | None,
 ) -> str:
@@ -105,5 +105,5 @@ def read_camera_metadata(image_path: str | Path) -> CameraMetadata:
         focal_length_mm=focal_length_mm,
         focal_length_35mm=focal_length_35mm,
         orientation=int(orientation) if orientation is not None else None,
-        lens_mode=_infer_lens_mode(lens_model_text, focal_length_35mm),
+        lens_mode=infer_lens_mode(lens_model_text, focal_length_35mm),
     )
