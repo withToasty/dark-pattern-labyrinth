@@ -40,6 +40,8 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--conf` | `0.15` | 検出の信頼度しきい値。神戸の実写検証では0.25だと車系が落ち、0.15で2台の `Land vehicle` を保持できた |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
 | `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
+| `--lens-mode` | `auto` | `auto` / `ultrawide` / `standard`。`auto` はEXIFのレンズ情報を使い、`ultrawide` は汎用の超広角近似を明示的に有効化する |
+| `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
 | `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
 
 ## モデルについて（Open Images V7 vs COCO）
@@ -90,8 +92,8 @@ annotated image、JSON/YAML出力まで確認している。
 
 ### 幾何学的な地平線
 
-`src/horizon.py` で、画像内の長い線分から消失点を推定し、
-2つの支配的な消失点を結んで幾何学的な地平線を求める。
+`src/horizon.py` で、画像内の長い線分から消失点を推定し、幾何学的な地平線を求める。
+都市写真ではまず縦線群 + 横方向の消失点1個を使い、失敗した場合は2つの横方向消失点を結ぶ方式へfallbackする。
 
 ```text
 image
@@ -124,15 +126,16 @@ image
 
 - `type`: `"curve"`
 - `sampling`: `"polyline"`（`points` は折れ線として補間する前提）
-- `points`: `[x, y]` の点列（現在は7点、`rectified` の直線を放物線近似したもの）
-- `curve_strength`: 曲がりの強さ（画像高に対する比率。デフォルト `0.015`）
-- `center_y` / `center_y_normalized`: 画像水平中心（歪みが最も弱い位置）でのy座標。
-  `rectified` の同名フィールドと一致する
+- `points`: `[x, y]` の点列（現在は7点）
+- `curve_strength`: 曲がりの強さ（画像高に対する比率）
+- `distortion_source`: `exif_heuristic` / `manual_lens_mode` / `manual_curve_strength` など
+- `distortion_model`: 現在は `parabolic_approximation`
+- `is_approximation`: 実測キャリブレーションではない場合 `true`
+- `basis`: その近似を採用した根拠
+- `center_y` / `center_y_normalized`: 画像水平中心でのy座標
 
-`distorted` は最初の簡易版として、`rectified` の直線をそのまま放物線で近似したもの
-（`src/horizon.py` の `_parabolic_distortion`）。画像中心で `rectified` と一致し、
-左右の端に向かうほど `curve_strength * 画像高` を上限としてずれていく。
-実レンズの歪みモデルではなく、あくまで見た目の近似。
+重要: EXIFや手動指定など、歪みを使う根拠がない画像では `distorted: null` とし、固定値で勝手に曲線を作らない。
+`--lens-mode ultrawide` またはEXIFから超広角と判断できた場合にのみ、汎用の放物線近似を出す。これは実レンズのキャリブレーション値ではなく、必ず `is_approximation: true` として区別する。
 
 トップレベルの主な出力：
 
@@ -181,7 +184,18 @@ Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として
   "image": {
     "filename": "sample.jpg",
     "width": 1920,
-    "height": 1080
+    "height": 1080,
+    "camera": {
+      "make": "Apple",
+      "model": "iPhone",
+      "lens_model": "Ultra Wide Camera",
+      "focal_length_mm": 2.2,
+      "focal_length_35mm": 13.0,
+      "orientation": 1,
+      "lens_mode": "ultrawide",
+      "lens_mode_effective": "ultrawide",
+      "lens_mode_source": "exif"
+    }
   },
   "detections": [
     {
@@ -227,6 +241,10 @@ Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として
           [1919.0, 495.4]
         ],
         "curve_strength": 0.015,
+        "distortion_source": "exif_heuristic",
+        "distortion_model": "parabolic_approximation",
+        "is_approximation": true,
+        "basis": "EXIF focal_length_35mm=13",
         "center_y": 501.6,
         "center_y_normalized": 0.4644
       }
@@ -241,12 +259,14 @@ Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として
 city-techno-vision/
   detect.py
   src/
+    camera_metadata.py
     detector.py
     fence_detector.py
     horizon.py
     visualize.py
     export.py
   tests/
+    test_camera_metadata.py
     test_fence_detector.py
     test_horizon.py
   requirements.txt
