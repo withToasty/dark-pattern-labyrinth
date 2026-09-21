@@ -88,15 +88,16 @@ def main() -> None:
             fence_detector = FenceDetector(model_path=args.fence_model)
             fence_mask = fence_detector.predict_mask(image)
         except RuntimeError as exc:
-            raise SystemExit(f"fence detection failed: {exc}") from exc
-        fence_detections = mask_to_detections(
-            fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
-        )
-        detections = merge_detections(detections, fence_detections)
-        mask_path = output_dir / "fence_mask.png"
-        cv2.imwrite(str(mask_path), (fence_mask * 255).astype("uint8"))
-        print(f"fence detections   -> {len(fence_detections)}")
-        print(f"fence mask         -> {mask_path}")
+            print(f"warning: fence detection unavailable; continuing with YOLO-only results: {exc}")
+        else:
+            fence_detections = mask_to_detections(
+                fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
+            )
+            detections = merge_detections(detections, fence_detections)
+            mask_path = output_dir / "fence_mask.png"
+            cv2.imwrite(str(mask_path), (fence_mask * 255).astype("uint8"))
+            print(f"fence detections   -> {len(fence_detections)}")
+            print(f"fence mask         -> {mask_path}")
 
     annotated = draw_detections(image, detections)
     annotated_path = output_dir / f"{image_path.stem}_detected{image_path.suffix}"
