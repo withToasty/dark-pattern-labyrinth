@@ -39,7 +39,7 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--model` | `yolov8n-oiv7.pt` | 使用するUltralytics YOLOモデル/重みファイル |
 | `--conf` | `0.25` | 検出の信頼度しきい値 |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
-| `--fence-model` | (なし) | fence用セマンティックセグメンテーションモデルのHugging Face model idまたはローカルパス（推奨: `nvidia/segformer-b0-finetuned-cityscapes-1024-1024`）。指定すると通常物体検出とは独立に fence 領域を検出して結果をマージする |
+| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
 
 ## モデルについて（Open Images V7 vs COCO）
 
