@@ -1,0 +1,655 @@
+{
+  "model": "yolov8n-oiv7.pt",
+  "source": "city-techno-vision/tests/fixtures/kobe_fence_test.jpg",
+  "source_commit": "1c14c9e972de20285f802da48a5e55a676ed57a3",
+  "inference_floor": 0.01,
+  "car_candidates": [
+    {
+      "label": "Car",
+      "confidence": 0.0332,
+      "xyxy": [
+        2051.4,
+        1148.4,
+        2150.3,
+        1213.2
+      ]
+    },
+    {
+      "label": "Car",
+      "confidence": 0.015,
+      "xyxy": [
+        1722.0,
+        1075.1,
+        2060.8,
+        1217.8
+      ]
+    }
+  ],
+  "thresholds": {
+    "0.10": {
+      "total": 9,
+      "labels": {
+        "Skyscraper": 4,
+        "Land vehicle": 2,
+        "Building": 1,
+        "Tree": 2
+      },
+      "cars": []
+    },
+    "0.15": {
+      "total": 7,
+      "labels": {
+        "Skyscraper": 4,
+        "Land vehicle": 2,
+        "Building": 1
+      },
+      "cars": []
+    },
+    "0.20": {
+      "total": 4,
+      "labels": {
+        "Skyscraper": 4
+      },
+      "cars": []
+    },
+    "0.25": {
+      "total": 4,
+      "labels": {
+        "Skyscraper": 4
+      },
+      "cars": []
+    }
+  },
+  "all_predictions": [
+    {
+      "label": "Skyscraper",
+      "confidence": 0.5983,
+      "xyxy": [
+        766.7,
+        326.3,
+        1068.1,
+        1122.9
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.3637,
+      "xyxy": [
+        425.3,
+        748.3,
+        695.3,
+        1119.4
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.2936,
+      "xyxy": [
+        0.9,
+        607.2,
+        342.7,
+        1081.2
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.2835,
+      "xyxy": [
+        1675.7,
+        563.1,
+        1927.4,
+        1153.1
+      ]
+    },
+    {
+      "label": "Land vehicle",
+      "confidence": 0.1998,
+      "xyxy": [
+        464.5,
+        1132.8,
+        930.8,
+        1396.2
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.1766,
+      "xyxy": [
+        2112.3,
+        226.3,
+        2575.8,
+        1247.8
+      ]
+    },
+    {
+      "label": "Land vehicle",
+      "confidence": 0.1708,
+      "xyxy": [
+        1689.3,
+        1070.8,
+        2077.6,
+        1411.3
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.1457,
+      "xyxy": [
+        0.6,
+        990.6,
+        660.2,
+        1193.7
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.113,
+      "xyxy": [
+        0.0,
+        986.5,
+        226.0,
+        1191.4
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.093,
+      "xyxy": [
+        1671.7,
+        560.3,
+        2088.1,
+        1175.7
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0888,
+      "xyxy": [
+        1678.7,
+        566.6,
+        2097.0,
+        1169.5
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0721,
+      "xyxy": [
+        672.2,
+        865.7,
+        749.7,
+        1121.9
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0708,
+      "xyxy": [
+        378.9,
+        1030.6,
+        655.8,
+        1178.9
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0694,
+      "xyxy": [
+        2279.9,
+        226.9,
+        2576.0,
+        1175.6
+      ]
+    },
+    {
+      "label": "Billboard",
+      "confidence": 0.0658,
+      "xyxy": [
+        2326.8,
+        230.6,
+        2576.0,
+        536.1
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0641,
+      "xyxy": [
+        822.1,
+        1075.1,
+        968.0,
+        1184.0
+      ]
+    },
+    {
+      "label": "Billboard",
+      "confidence": 0.0618,
+      "xyxy": [
+        2372.2,
+        523.6,
+        2575.3,
+        649.2
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0571,
+      "xyxy": [
+        773.9,
+        1073.4,
+        1131.2,
+        1186.6
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0516,
+      "xyxy": [
+        313.0,
+        893.4,
+        463.6,
+        1092.8
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0488,
+      "xyxy": [
+        1195.1,
+        1044.2,
+        1298.0,
+        1163.1
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0472,
+      "xyxy": [
+        1661.6,
+        214.0,
+        2575.1,
+        1312.0
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0458,
+      "xyxy": [
+        193.0,
+        1022.2,
+        397.9,
+        1169.0
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0422,
+      "xyxy": [
+        954.0,
+        1078.4,
+        1117.9,
+        1185.2
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0415,
+      "xyxy": [
+        156.6,
+        1025.4,
+        670.2,
+        1184.5
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0404,
+      "xyxy": [
+        876.3,
+        1076.8,
+        1114.2,
+        1186.7
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0371,
+      "xyxy": [
+        1925.5,
+        226.6,
+        2575.0,
+        1286.5
+      ]
+    },
+    {
+      "label": "Car",
+      "confidence": 0.0332,
+      "xyxy": [
+        2051.4,
+        1148.4,
+        2150.3,
+        1213.2
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0329,
+      "xyxy": [
+        2.1,
+        984.3,
+        379.9,
+        1194.4
+      ]
+    },
+    {
+      "label": "Wheel",
+      "confidence": 0.0317,
+      "xyxy": [
+        733.5,
+        1305.1,
+        783.3,
+        1391.1
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0285,
+      "xyxy": [
+        2115.8,
+        588.3,
+        2575.1,
+        1297.4
+      ]
+    },
+    {
+      "label": "Land vehicle",
+      "confidence": 0.0275,
+      "xyxy": [
+        1701.1,
+        1072.5,
+        2066.0,
+        1299.4
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0248,
+      "xyxy": [
+        192.8,
+        1023.1,
+        327.3,
+        1173.1
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0245,
+      "xyxy": [
+        0.0,
+        594.2,
+        361.5,
+        1141.1
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0239,
+      "xyxy": [
+        1621.0,
+        1094.8,
+        1686.7,
+        1176.5
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0236,
+      "xyxy": [
+        950.9,
+        1080.7,
+        1066.0,
+        1185.5
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0228,
+      "xyxy": [
+        1913.0,
+        837.1,
+        2069.6,
+        1163.9
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0224,
+      "xyxy": [
+        420.5,
+        1032.3,
+        642.3,
+        1159.6
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0224,
+      "xyxy": [
+        1954.1,
+        726.1,
+        2071.2,
+        1152.8
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0202,
+      "xyxy": [
+        243.9,
+        1055.9,
+        402.9,
+        1159.3
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0185,
+      "xyxy": [
+        2121.0,
+        603.8,
+        2355.4,
+        910.9
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0179,
+      "xyxy": [
+        1961.5,
+        727.9,
+        2068.2,
+        898.2
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0177,
+      "xyxy": [
+        1693.1,
+        687.8,
+        1918.2,
+        1095.8
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0176,
+      "xyxy": [
+        782.7,
+        918.0,
+        888.9,
+        1124.8
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.017,
+      "xyxy": [
+        1673.8,
+        482.7,
+        2569.5,
+        1216.8
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.017,
+      "xyxy": [
+        0.0,
+        974.8,
+        957.6,
+        1194.3
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0155,
+      "xyxy": [
+        4.1,
+        289.1,
+        2570.5,
+        1256.9
+      ]
+    },
+    {
+      "label": "Billboard",
+      "confidence": 0.0153,
+      "xyxy": [
+        2325.7,
+        228.6,
+        2576.0,
+        706.5
+      ]
+    },
+    {
+      "label": "Building",
+      "confidence": 0.0152,
+      "xyxy": [
+        2070.7,
+        893.2,
+        2508.2,
+        1243.4
+      ]
+    },
+    {
+      "label": "Car",
+      "confidence": 0.015,
+      "xyxy": [
+        1722.0,
+        1075.1,
+        2060.8,
+        1217.8
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0136,
+      "xyxy": [
+        105.7,
+        1019.4,
+        338.5,
+        1189.3
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0135,
+      "xyxy": [
+        1191.1,
+        1037.9,
+        1294.5,
+        1135.0
+      ]
+    },
+    {
+      "label": "Wheel",
+      "confidence": 0.0132,
+      "xyxy": [
+        717.7,
+        1304.0,
+        769.2,
+        1390.1
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0132,
+      "xyxy": [
+        1422.1,
+        1096.8,
+        1563.4,
+        1175.1
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0125,
+      "xyxy": [
+        28.2,
+        995.1,
+        327.4,
+        1179.4
+      ]
+    },
+    {
+      "label": "Billboard",
+      "confidence": 0.0122,
+      "xyxy": [
+        2323.0,
+        228.2,
+        2575.7,
+        984.4
+      ]
+    },
+    {
+      "label": "Skyscraper",
+      "confidence": 0.0122,
+      "xyxy": [
+        662.9,
+        778.9,
+        780.7,
+        1114.8
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0122,
+      "xyxy": [
+        2081.8,
+        1074.6,
+        2154.3,
+        1157.9
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0111,
+      "xyxy": [
+        318.9,
+        1056.8,
+        399.1,
+        1160.9
+      ]
+    },
+    {
+      "label": "Tree",
+      "confidence": 0.0104,
+      "xyxy": [
+        0.0,
+        991.3,
+        125.3,
+        1184.4
+      ]
+    }
+  ]
+}
