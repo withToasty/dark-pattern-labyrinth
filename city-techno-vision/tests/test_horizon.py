@@ -5,10 +5,11 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.horizon import estimate_horizon
+from src.horizon import estimate_horizon, generic_ultrawide_distortion
 
 
 def _synthetic_perspective_scene() -> np.ndarray:
@@ -113,3 +114,53 @@ def test_estimate_horizon_returns_not_detected_for_blank_image():
 
     assert not result.detected
     assert result.confidence == 0.0
+
+
+def test_to_dict_splits_rectified_line_and_distorted_curve():
+    result = estimate_horizon(
+        _synthetic_urban_scene(),
+        distortion=generic_ultrawide_distortion(
+            "manual_lens_mode", basis="test ultrawide hint"
+        ),
+    )
+    data = result.to_dict()
+
+    assert "left_y" not in data
+    assert data["rectified"]["type"] == "line"
+    assert data["rectified"]["center_y"] == pytest.approx(result.center_y, abs=1e-3)
+    assert data["rectified"]["left_y"] == pytest.approx(result.left_y, abs=1e-3)
+    assert data["rectified"]["right_y"] == pytest.approx(result.right_y, abs=1e-3)
+
+    distorted = data["distorted"]
+    assert distorted["type"] == "curve"
+    assert distorted["sampling"] == "polyline"
+    assert distorted["distortion_source"] == "manual_lens_mode"
+    assert distorted["distortion_model"] == "parabolic_approximation"
+    assert distorted["is_approximation"] is True
+    assert distorted["basis"] == "test ultrawide hint"
+    assert len(distorted["points"]) == 7
+    # The curve matches the rectified line at the image's horizontal center.
+    assert distorted["center_y"] == pytest.approx(result.center_y, abs=1e-3)
+    center_index = len(distorted["points"]) // 2
+    assert distorted["points"][center_index][1] == pytest.approx(result.center_y, abs=1e-3)
+    # And bows away from it toward the left/right edges.
+    assert distorted["points"][0][1] != pytest.approx(result.left_y, abs=1e-3)
+    assert distorted["points"][-1][1] != pytest.approx(result.right_y, abs=1e-3)
+
+
+def test_to_dict_has_no_rectified_or_distorted_when_not_detected():
+    blank = np.zeros((400, 600, 3), dtype=np.uint8)
+    result = estimate_horizon(blank)
+
+    data = result.to_dict()
+
+    assert data["rectified"] is None
+    assert data["distorted"] is None
+
+
+def test_to_dict_does_not_fake_curve_without_distortion_hint():
+    result = estimate_horizon(_synthetic_urban_scene())
+    data = result.to_dict()
+
+    assert data["rectified"] is not None
+    assert data["distorted"] is None
