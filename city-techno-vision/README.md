@@ -7,9 +7,9 @@ City Techno プロジェクトの「画像認識」部分のみを実装した�
 ```
 画像
  ↓
-物体検出 + 幾何学的な地平線推定
+物体検出 + 音楽用リファレンス・ホライゾン推定
  ↓
-枠線・地平線付き画像 ＋ JSON / YAML
+枠線・ホライゾン付き画像 ＋ JSON / YAML
 ```
 
 音（物体と音の対応、BPM、音程、リズム、MIDI/音声生成など）への変換は
@@ -90,10 +90,10 @@ python detect.py --image photo.jpg \
 通常YOLO検出、SegFormer推論、`fence_mask.png`、fence bbox、
 annotated image、JSON/YAML出力まで確認している。
 
-### 幾何学的な地平線
+### リファレンス・ホライゾン
 
-`src/horizon.py` で、画像内の長い線分から消失点を推定し、幾何学的な地平線を求める。
-都市写真ではまず縦線群 + 横方向の消失点1個を使い、失敗した場合は2つの横方向消失点を結ぶ方式へfallbackする。
+`src/horizon.py` で、画像内の長い線分から複数のホライゾン候補を作る。目的は測量上の真値ではなく、物体からの距離などを音へ変換するときに違和感の少ない `musical_reference` を得ること。
+都市写真では縦方向・横方向の消失点を使う候補と、2つの横方向消失点を使う候補を評価し、自然な候補だけを採用する。
 
 ```text
 image
@@ -107,6 +107,19 @@ image
 外部AIモデルは使わず、OpenCVのみで動く。
 道路・建物など直線が多い都市景観を主対象とし、
 十分な幾何情報がない場合は無理に線を作らず `detected: false` を返す。
+
+さらに、候補が数学的に成立してもそのまま採用しない。以下のゲートで「音楽用の基準線として自然か」を評価する。
+
+- 支持線が画像幅の広い範囲に分散しているか
+- 一部の建物・道路だけに局所化していないか
+- ホライゾンの大部分が画像内にあるか
+- 傾きが極端でないか
+- 既存の幾何 confidence と上記条件を合わせた `reference_score`
+
+不採用時は `detected: false` とし、`rejection_reason` に
+`excessive_tilt` / `mostly_out_of_frame` /
+`insufficient_spatial_support` / `localized_support` /
+`low_reference_score` などを残す。
 
 出力の直下（`detected` / `method` / `confidence` / `supporting_lines` /
 `vanishing_points`）に加えて、地平線そのものは `rectified`（幾何学的な直線）と
@@ -139,7 +152,12 @@ image
 
 トップレベルの主な出力：
 
-- `confidence`: 線分の支持率などから計算した信頼度
+- `role`: 現在は `musical_reference`
+- `confidence`: 幾何学的な線分支持率などから計算した信頼度
+- `reference_score`: 音楽用基準線としての自然さを含む採用スコア
+- `rejection_reason`: 候補を棄却した場合の理由
+- `spatial_support_span` / `spatial_support_bins`: 支持線が画像横方向にどれだけ広がっているか
+- `in_frame_fraction`: 候補線のうち画像内に収まる割合
 - `vanishing_points`: 検証用の消失点座標
 
 ## 検出対象を増やす（open-vocabulary detection）
@@ -212,8 +230,15 @@ Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として
   "scene_geometry": {
     "horizon": {
       "detected": true,
-      "method": "line_vanishing_points",
+      "method": "vertical_guided_single_vp",
+      "role": "musical_reference",
       "confidence": 0.81,
+      "candidate_detected": true,
+      "reference_score": 0.76,
+      "spatial_support_span": 0.68,
+      "spatial_support_bins": 3,
+      "in_frame_fraction": 1.0,
+      "rejection_reason": null,
       "supporting_lines": 14,
       "vanishing_points": [
         {"x": -1120.4, "y": 481.5, "supporting_lines": 7},
