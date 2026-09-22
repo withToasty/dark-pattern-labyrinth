@@ -1,10 +1,11 @@
-"""Tests for src/pipeline.py's fence-detection-is-required contract.
+"""Tests for src/pipeline.py's "always run all three steps" contract.
 
-A normal successful run_pipeline() call is YOLO + SegFormer fence detection
-+ horizon estimation together. These tests exercise the real run_pipeline
-with only the model cache mocked (ObjectDetector/FenceDetector stand-ins),
-so no real weights are loaded. There is no YOLO-only fallback to test --
-that's the point: any fence failure must raise FenceDetectionError.
+A normal successful run_pipeline() call always runs YOLO detection,
+SegFormer fence detection, and horizon estimation together -- there is no
+option to skip any of them. These tests exercise the real run_pipeline with
+only the model cache mocked (ObjectDetector/FenceDetector stand-ins), so no
+real weights are loaded. There is no YOLO-only fallback to test -- that's
+the point: any fence failure must raise FenceDetectionError.
 """
 
 from __future__ import annotations
@@ -96,27 +97,15 @@ def test_run_pipeline_succeeds_with_yolo_fence_and_horizon(sample_image, monkeyp
         lambda *a, **k: (_StubFenceDetector(fence_mask), None),
     )
 
-    result = run_pipeline(sample_image, PipelineOptions(enable_horizon=True))
+    result = run_pipeline(sample_image, PipelineOptions())
 
     labels = {det.label for det in result.detections}
     assert "car" in labels
     assert "fence" in labels
     assert result.fence_mask is not None
-    # Horizon estimation runs and produces a result either way; a
+    # Horizon estimation always runs and produces a result either way; a
     # `detected: false` outcome (likely here, on a blank synthetic image)
     # is still a normal, successful result, not an error.
     assert result.horizon is not None
     assert "scene_geometry" in result.result
     assert result.result["scene_geometry"]["horizon"]["detected"] in (True, False)
-
-
-def test_run_pipeline_horizon_disabled_still_requires_fence(sample_image, monkeypatch):
-    """enable_horizon=False must not be read as "fence is optional too"."""
-    monkeypatch.setattr(
-        pipeline_module._MODEL_CACHE,
-        "get_fence_detector",
-        lambda *a, **k: (None, "network blocked"),
-    )
-
-    with pytest.raises(FenceDetectionError):
-        run_pipeline(sample_image, PipelineOptions(enable_horizon=False))

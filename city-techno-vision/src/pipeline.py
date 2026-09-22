@@ -7,13 +7,15 @@ call so both entry points run the same steps and produce the same JSON/YAML
 schema. Model weights (YOLO, SegFormer) are cached per-process so repeated
 calls don't reload them.
 
-A normal successful analysis is YOLO detection + SegFormer fence detection +
-horizon estimation, together -- not YOLO alone. Fence detection is required:
+A normal successful analysis always runs all three of: YOLO detection,
+SegFormer fence detection, and horizon estimation -- there is no option to
+skip any of them, for the CLI or the web API. Fence detection is required:
 if the SegFormer model can't be loaded or inference fails, run_pipeline()
 raises FenceDetectionError rather than returning a YOLO-only result as a
-success. This applies identically to the CLI and the web API; there is no
-YOLO-only fallback/debug mode. Horizon estimation itself never raises for a
-"soft" case -- a `detected: false` horizon is a normal, successful result.
+success. Horizon estimation itself never raises for a "soft" case -- a
+`detected: false` horizon is still a normal, successful result, since
+estimate_horizon() only ever returns that when the image lacks enough
+geometric structure to place a reference line.
 """
 
 from __future__ import annotations
@@ -44,7 +46,6 @@ class PipelineOptions:
     classes: list[str] | None = None
     lens_mode: str = "auto"
     curve_strength: float | None = None
-    enable_horizon: bool = True
 
 
 class FenceDetectionError(RuntimeError):
@@ -179,7 +180,7 @@ def run_pipeline(image_path: Path, options: PipelineOptions | None = None) -> Pi
         else:
             distortion = generic_ultrawide_distortion("manual_lens_mode", basis="--lens-mode ultrawide")
 
-    horizon = estimate_horizon(image, distortion=distortion) if options.enable_horizon else None
+    horizon = estimate_horizon(image, distortion=distortion)
 
     annotated = draw_detections(image, detections)
     if horizon is not None:

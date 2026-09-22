@@ -42,7 +42,8 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。fence検出は必須で、YOLOの結果とマージする。モデルのロードまたは推論に失敗した場合、YOLO-onlyの結果へfallbackはせず、実行はエラーで終了する |
 | `--lens-mode` | `auto` | `auto` / `ultrawide` / `standard`。`auto` はEXIFのレンズ情報を使い、`ultrawide` は汎用の超広角近似を明示的に有効化する |
 | `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
-| `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
+
+horizon estimationは常に実行される（無効化するオプションはない）。`detected: false` はエラーではなく正常な結果。
 
 ## Web UI
 
@@ -84,7 +85,8 @@ SegFormer による fence detection は、CLI（`detect.py`）・Web（`/api/ana
 - SegFormer fence detection実行成功
 - Horizon estimation実行（`detected: false`も正常結果）
 
-の3つがそろうことで、YOLO-onlyの結果を「解析成功」として返すことはしない。
+の3つを常に1セットとして実行し、どれか1つでも省く・無効化するオプションは無い
+（YOLO-onlyやhorizon省略の結果を「解析成功」として返すことはしない）。
 SegFormerのモデルロードまたは推論に失敗した場合、CLI・Webのどちらも
 YOLO-onlyへのfallbackはせず解析全体を失敗として扱う。
 CLIは終了コード非0・エラーメッセージで終了し、`/api/analyze` は 503 で

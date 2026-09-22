@@ -67,11 +67,6 @@ def parse_args() -> argparse.Namespace:
         help="manual parabolic curve strength as a fraction of image height; "
         "always exported as an approximation, never as measured calibration",
     )
-    parser.add_argument(
-        "--no-horizon",
-        action="store_true",
-        help="disable reference horizon estimation",
-    )
     return parser.parse_args()
 
 
@@ -92,7 +87,6 @@ def main() -> None:
         classes=classes,
         lens_mode=args.lens_mode,
         curve_strength=args.curve_strength,
-        enable_horizon=not args.no_horizon,
     )
 
     try:
