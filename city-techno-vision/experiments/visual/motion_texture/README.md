@@ -15,21 +15,33 @@
 最初から正確な3D復元はしない。
 まずは軽量なルールベースで「奥行きらしさ」と「時間の蓄積」が見えるかを検証する。
 
-## Proposed interface
+## Usage (実装済み)
+
+`city-techno-vision/` から実行する:
 
 ```bash
 python experiments/visual/motion_texture/render.py \
   --video path/to/input.mp4 \
-  --output-dir experiments/visual/motion_texture/output/
+  --output-dir experiments/visual/motion_texture/output/ \
+  --frames 12 \
+  --horizon-y 0.55 \
+  --strength 40 \
+  --direction auto \
+  --seed 0
 ```
 
-初期パラメータ候補:
+出力 (`--output-dir` 配下、Git管理外):
 
-- `--frames`: 使用するサンプルフレーム数
-- `--horizon-y`: 0〜1の正規化値。未指定時は安全な既定値
-- `--strength`: 手前側の変形量
-- `--direction`: left / right / auto
-- `--seed`: 再現用
+- `<name>_motion_texture.png` — 合成された静止画
+- `<name>_motion_texture.json` — 使用したパラメータのメタデータ
+
+パラメータ:
+
+- `--frames` (int, default 12): サンプリングするフレーム数（最低2）
+- `--horizon-y` (float, default 0.55): 0〜1の正規化値。この行より上を「奥」、下を「手前」とみなす
+- `--strength` (float, default 40.0): 手前側（画面下端）の最大変位量（px）
+- `--direction` (left / right / auto, default auto): 変位の向き。`auto` は `--seed` から決定的に選ぶ簡易版（光学フロー等の高度な方向推定はMVP範囲外）
+- `--seed` (int, default 0): 再現用。`auto` の向きと、フレームごとの変位ジッターに使う
 
 ## MVP algorithm
 
@@ -58,15 +70,24 @@ python experiments/visual/motion_texture/render.py \
 
 ## Acceptance criteria
 
-- [ ] mp4 / mov の短い動画を読める
-- [ ] 指定数のフレームをサンプリングできる
-- [ ] depth proxy によって上下で変形量が変わる
-- [ ] 時系列情報が1枚のPNGに残る
-- [ ] 同じ入力・seed・パラメータなら再現できる
-- [ ] パラメータをJSONに保存する
-- [ ] 失敗時に分かるエラーメッセージを出す
-- [ ] 既存テストを壊さない
-- [ ] READMEに実行例とパラメータ説明を残す
+- [x] mp4 / mov の短い動画を読める
+- [x] 指定数のフレームをサンプリングできる
+- [x] depth proxy によって上下で変形量が変わる
+- [x] 時系列情報が1枚のPNGに残る
+- [x] 同じ入力・seed・パラメータなら再現できる
+- [x] パラメータをJSONに保存する
+- [x] 失敗時に分かるエラーメッセージを出す
+- [x] 既存テストを壊さない
+- [x] READMEに実行例とパラメータ説明を残す
+
+## Tests
+
+```bash
+cd city-techno-vision
+python -m pytest experiments/visual/motion_texture/tests/test_motion_texture.py -v
+```
+
+実動画はコミットせず、NumPyの疑似フレームと `cv2.VideoWriter` で作る一時動画（テスト内でのみ生成、破棄）でカバーする。
 
 ## Not in MVP
 
