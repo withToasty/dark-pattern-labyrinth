@@ -1,6 +1,6 @@
 # city-techno-vision
 
-City Techno プロジェクトの「画像認識」部分のみを実装したもの。
+City Techno プロジェクトの画像認識を中心に実装したもの。視覚表現の試作は本体から分離して `experiments/visual/` に置く。
 
 やること：
 
@@ -309,6 +309,10 @@ city-techno-vision/
 
 fence用SegFormerはClaude sandboxではHugging Faceへの接続がブロックされたが、
 GitHub Actions上で実モデル + 実写真の推論を確認済み。
+
+## Visual experiments
+
+街の動画から視覚表現を作るMVPは `experiments/visual/` で管理する。現在は、動画の時間・移動・奥行きを1枚の静止画へ圧縮する `motion_texture` を先行し、その後に検出物体を小窓として残像・増殖させる `object_echo_windows` を試す。
 
 ## スコープ外
 
