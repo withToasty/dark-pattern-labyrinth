@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 *.pt
 output/
+
+# Visual experiment working data / generated media
+experiments/**/input/
+experiments/**/output/
+experiments/**/outputs/
+experiments/**/frames/
+experiments/**/.cache/
