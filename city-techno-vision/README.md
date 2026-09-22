@@ -39,10 +39,60 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--model` | `yolov8n-oiv7.pt` | 使用するUltralytics YOLOモデル/重みファイル |
 | `--conf` | `0.15` | 検出の信頼度しきい値。神戸の実写検証では0.25だと車系が落ち、0.15で2台の `Land vehicle` を保持できた |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
-| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
+| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。fence検出は必須で、YOLOの結果とマージする。モデルのロードまたは推論に失敗した場合、YOLO-onlyの結果へfallbackはせず、実行はエラーで終了する |
 | `--lens-mode` | `auto` | `auto` / `ultrawide` / `standard`。`auto` はEXIFのレンズ情報を使い、`ultrawide` は汎用の超広角近似を明示的に有効化する |
 | `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
-| `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
+
+horizon estimationは常に実行される（無効化するオプションはない）。`detected: false` はエラーではなく正常な結果。
+
+## Web UI
+
+ブラウザから画像を1枚アップロードして解析・結果表示までできる、最小構成のWeb版（FastAPI + HTML/CSS/vanilla JS、React等は不使用）。
+
+新しい画像認識ロジックはWeb側に持たず、CLIと同じ `src/pipeline.py` の
+`run_pipeline()` を呼ぶだけ。JSON/YAMLのschemaもCLIと同一。
+
+起動:
+
+```
+pip install -r requirements.txt
+uvicorn web.app:app --reload
+```
+
+`http://127.0.0.1:8000/` をブラウザで開くと使える。
+
+できること:
+
+- 画像のdrag & drop / ファイル選択 → プレビュー → 解析する
+- Original画像とbbox（＋horizon）付きのDetected画像を横並び表示（狭い画面では縦積み）
+- Detection一覧（id / label / group / confidence / minx / miny / maxx / maxy。`group`が無いdetectionは「—」表示）
+- Horizonサマリー（`scene_geometry.horizon`がある場合のみ。`detected: false`はエラーではなく正常な結果として表示する）
+- 解析成功時は常に表示される fence mask（折りたたみ表示）
+- JSON / YAML をタブ表示、Copy / Download
+- 不正なファイル・解析失敗時のエラー表示（stack traceはそのまま出さない）
+
+API: `POST /api/analyze`（multipart、`image=<file>`）で `run_id` / 検出結果 /
+JSON・YAMLテキスト / 各アセットの取得URL（`GET /api/runs/{run_id}/original`
+など）/ `warnings` を返す。YOLO/SegFormerのモデルはプロセス内でキャッシュされ、
+アップロードのたびには読み込まない。一時ファイルはrunごとのディレクトリに
+書き出し、古いrun（既定30分）は次のリクエスト時に簡易cleanupされる
+（DB・ログイン・履歴なし）。
+
+SegFormer による fence detection は、CLI（`detect.py`）・Web（`/api/analyze`）
+共通の `src/pipeline.py` の `run_pipeline()` レベルで必須。通常の解析成功条件は
+
+- YOLO実行成功
+- SegFormer fence detection実行成功
+- Horizon estimation実行（`detected: false`も正常結果）
+
+の3つを常に1セットとして実行し、どれか1つでも省く・無効化するオプションは無い
+（YOLO-onlyやhorizon省略の結果を「解析成功」として返すことはしない）。
+SegFormerのモデルロードまたは推論に失敗した場合、CLI・Webのどちらも
+YOLO-onlyへのfallbackはせず解析全体を失敗として扱う。
+CLIは終了コード非0・エラーメッセージで終了し、`/api/analyze` は 503 で
+エラーを返す（どちらもstack traceは出さない）。YOLO-only用のdebug modeは無い。
+
+音楽生成、複数画像対応、ログイン、モデル選択UI、threshold変更UIはこのMVPには含まれない。
 
 ## モデルについて（Open Images V7 vs COCO）
 
@@ -290,10 +340,16 @@ city-techno-vision/
     horizon.py
     visualize.py
     export.py
+    pipeline.py        # CLI (detect.py) と Web API (web/app.py) が共有する処理
+  web/
+    app.py              # FastAPI app (POST /api/analyze など)
+    static/              # index.html / style.css / app.js
   tests/
     test_camera_metadata.py
+    test_export.py
     test_fence_detector.py
     test_horizon.py
+    test_web_api.py
   requirements.txt
 ```
 

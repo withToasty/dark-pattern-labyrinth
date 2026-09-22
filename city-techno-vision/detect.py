@@ -18,12 +18,9 @@ from pathlib import Path
 
 import cv2
 
-from src.camera_metadata import read_camera_metadata
-from src.detector import DEFAULT_CITY_CLASSES, ObjectDetector, merge_detections
-from src.export import build_result, write_json, write_yaml
-from src.fence_detector import DEFAULT_FENCE_MODEL_ID, FenceDetector, mask_to_detections
-from src.horizon import DistortionSpec, estimate_horizon, generic_ultrawide_distortion
-from src.visualize import draw_detections, draw_horizon
+from src.export import write_json, write_yaml
+from src.fence_detector import DEFAULT_FENCE_MODEL_ID
+from src.pipeline import FenceDetectionError, PipelineOptions, run_pipeline
 
 
 def parse_args() -> argparse.Namespace:
@@ -44,8 +41,9 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_FENCE_MODEL_ID,
         help="Hugging Face model id or local path for the fence-segmentation "
         "model (default: nvidia/segformer-b0-finetuned-cityscapes-"
-        "1024-1024, see src/fence_detector.py). Fence detection runs by default "
-        "and is merged into the same detections list.",
+        "1024-1024, see src/fence_detector.py). Fence detection is required: "
+        "if this model can't be loaded or inference fails, the run fails "
+        "entirely rather than falling back to a YOLO-only result.",
     )
     parser.add_argument(
         "--classes",
@@ -69,11 +67,6 @@ def parse_args() -> argparse.Namespace:
         help="manual parabolic curve strength as a fraction of image height; "
         "always exported as an approximation, never as measured calibration",
     )
-    parser.add_argument(
-        "--no-horizon",
-        action="store_true",
-        help="disable reference horizon estimation",
-    )
     return parser.parse_args()
 
 
@@ -83,87 +76,45 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    image = cv2.imread(str(image_path))
-    if image is None:
-        raise SystemExit(f"could not read image: {image_path}")
-    height, width = image.shape[:2]
-
-    is_open_vocab_model = "world" in args.model.lower()
-    if args.classes:
-        classes = [c.strip() for c in args.classes.split(",") if c.strip()]
-    elif is_open_vocab_model:
-        classes = DEFAULT_CITY_CLASSES
-    else:
-        classes = None
+    classes = [c.strip() for c in args.classes.split(",") if c.strip()] if args.classes else None
     if classes:
         print(f"classes: {', '.join(classes)}")
 
-    detector = ObjectDetector(model_path=args.model, confidence_threshold=args.conf, classes=classes)
-    detections = detector.detect(str(image_path))
+    options = PipelineOptions(
+        model=args.model,
+        confidence=args.conf,
+        fence_model=args.fence_model or None,
+        classes=classes,
+        lens_mode=args.lens_mode,
+        curve_strength=args.curve_strength,
+    )
 
-    if args.fence_model:
-        try:
-            fence_detector = FenceDetector(model_path=args.fence_model)
-            fence_mask = fence_detector.predict_mask(image)
-        except RuntimeError as exc:
-            print(f"warning: fence detection unavailable; continuing with YOLO-only results: {exc}")
-        else:
-            fence_detections = mask_to_detections(
-                fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
-            )
-            detections = merge_detections(detections, fence_detections)
-            mask_path = output_dir / "fence_mask.png"
-            cv2.imwrite(str(mask_path), (fence_mask * 255).astype("uint8"))
-            print(f"fence detections   -> {len(fence_detections)}")
-            print(f"fence mask         -> {mask_path}")
+    try:
+        pipeline_result = run_pipeline(image_path, options)
+    except (ValueError, FenceDetectionError) as exc:
+        raise SystemExit(str(exc)) from exc
 
-    camera = read_camera_metadata(image_path)
-    effective_lens_mode = camera.lens_mode if args.lens_mode == "auto" else args.lens_mode
-    distortion = None
-    if args.curve_strength is not None:
-        distortion = DistortionSpec(
-            source="manual_curve_strength",
-            curve_strength=args.curve_strength,
-            is_approximation=True,
-            basis="--curve-strength",
-        )
-    elif effective_lens_mode == "ultrawide":
-        if args.lens_mode == "auto":
-            if camera.focal_length_35mm is not None:
-                basis = f"EXIF focal_length_35mm={camera.focal_length_35mm:g}"
-            elif camera.lens_model:
-                basis = f"EXIF lens_model={camera.lens_model}"
-            else:
-                basis = "EXIF ultrawide hint"
-            distortion = generic_ultrawide_distortion("exif_heuristic", basis=basis)
-        else:
-            distortion = generic_ultrawide_distortion(
-                "manual_lens_mode",
-                basis="--lens-mode ultrawide",
-            )
+    for warning in pipeline_result.warnings:
+        print(f"warning: {warning}")
 
-    horizon = None if args.no_horizon else estimate_horizon(image, distortion=distortion)
+    # Fence detection is required (run_pipeline raises otherwise), so a
+    # successful result always has a mask.
+    mask_path = output_dir / "fence_mask.png"
+    cv2.imwrite(str(mask_path), (pipeline_result.fence_mask * 255).astype("uint8"))
+    fence_count = sum(1 for det in pipeline_result.detections if det.label == "fence")
+    print(f"fence detections   -> {fence_count}")
+    print(f"fence mask         -> {mask_path}")
 
-    annotated = draw_detections(image, detections)
-    if horizon is not None:
-        annotated = draw_horizon(annotated, horizon)
     annotated_path = output_dir / f"{image_path.stem}_detected{image_path.suffix}"
-    cv2.imwrite(str(annotated_path), annotated)
-
-    result = build_result(image_path.name, width, height, detections)
-    camera_data = camera.to_dict()
-    camera_data["lens_mode_effective"] = effective_lens_mode
-    camera_data["lens_mode_source"] = "exif" if args.lens_mode == "auto" else "manual"
-    result["image"]["camera"] = camera_data
-    if horizon is not None:
-        result["scene_geometry"] = {"horizon": horizon.to_dict()}
+    cv2.imwrite(str(annotated_path), pipeline_result.annotated_image)
 
     json_path = output_dir / "detections.json"
     yaml_path = output_dir / "detections.yaml"
-    write_json(result, json_path)
-    write_yaml(result, yaml_path)
+    write_json(pipeline_result.result, json_path)
+    write_yaml(pipeline_result.result, yaml_path)
 
-    print(f"detected {len(detections)} object(s)")
+    print(f"detected {len(pipeline_result.detections)} object(s)")
+    horizon = pipeline_result.horizon
     if horizon is not None:
         if horizon.detected:
             print(

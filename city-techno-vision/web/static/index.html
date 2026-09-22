@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>City Techno Vision</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="site-header">
+  <h1>City Techno Vision</h1>
+  <p class="subtitle">Upload a street image and convert detected objects into structured data.</p>
+</header>
+
+<main>
+  <section class="card" id="upload-card">
+    <div id="dropzone" class="dropzone">
+      <p class="dropzone-hint">Drag &amp; drop an image here, or</p>
+      <label class="file-button">
+        Choose file
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hidden>
+      </label>
+      <p class="dropzone-formats">JPG, PNG, or WEBP &middot; one image</p>
+    </div>
+
+    <div id="preview-area" class="preview-area" hidden>
+      <img id="preview-image" alt="Selected image preview">
+      <div class="preview-row">
+        <span id="preview-filename" class="preview-filename"></span>
+        <button type="button" id="change-file-button" class="secondary-button">Choose a different image</button>
+      </div>
+    </div>
+
+    <div class="analyze-row">
+      <button type="button" id="analyze-button" class="primary-button" disabled>Analyze</button>
+      <span id="status-message" class="status-message" role="status"></span>
+    </div>
+    <p id="error-message" class="error-message" role="alert" hidden></p>
+  </section>
+
+  <section id="result-section" class="result-section" hidden>
+    <h2>Result</h2>
+
+    <div id="warnings-box" class="warnings-box" hidden></div>
+
+    <div class="image-compare">
+      <div class="image-panel">
+        <h3>Original</h3>
+        <img id="original-image" alt="Original uploaded image">
+      </div>
+      <div class="image-panel">
+        <h3>Detected</h3>
+        <img id="annotated-image" alt="Detected objects and horizon overlaid on the image">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Detected Objects</h3>
+      <div class="table-wrap">
+        <table id="detections-table">
+          <thead>
+            <tr><th>ID</th><th>Label</th><th>Group</th><th>Confidence</th><th>minx</th><th>miny</th><th>maxx</th><th>maxy</th></tr>
+          </thead>
+          <tbody id="detections-body"></tbody>
+        </table>
+      </div>
+      <p id="no-detections-message" class="muted" hidden>No objects detected.</p>
+    </div>
+
+    <div class="panel" id="horizon-section" hidden>
+      <h3>Horizon <span class="muted-inline">(musical reference, not survey-grade)</span></h3>
+      <dl id="horizon-summary" class="horizon-summary"></dl>
+    </div>
+
+    <div class="panel" id="fence-mask-section" hidden>
+      <button type="button" id="toggle-fence-mask" class="secondary-button" aria-expanded="false">Show fence mask</button>
+      <img id="fence-mask-image" class="fence-mask-image" alt="Fence probability mask" hidden>
+    </div>
+
+    <div class="panel">
+      <h3>Output</h3>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab-button active" data-tab="json" role="tab" aria-selected="true">JSON</button>
+        <button type="button" class="tab-button" data-tab="yaml" role="tab" aria-selected="false">YAML</button>
+        <span class="tab-spacer"></span>
+        <button type="button" id="copy-button" class="secondary-button small">Copy</button>
+        <a id="download-link" class="secondary-button small" download>Download</a>
+      </div>
+      <pre id="json-output" class="output-pre"><code id="json-code"></code></pre>
+      <pre id="yaml-output" class="output-pre" hidden><code id="yaml-code"></code></pre>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
