@@ -20,7 +20,7 @@ import cv2
 
 from src.export import write_json, write_yaml
 from src.fence_detector import DEFAULT_FENCE_MODEL_ID
-from src.pipeline import PipelineOptions, run_pipeline
+from src.pipeline import FenceDetectionError, PipelineOptions, run_pipeline
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,8 +41,9 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_FENCE_MODEL_ID,
         help="Hugging Face model id or local path for the fence-segmentation "
         "model (default: nvidia/segformer-b0-finetuned-cityscapes-"
-        "1024-1024, see src/fence_detector.py). Fence detection runs by default "
-        "and is merged into the same detections list.",
+        "1024-1024, see src/fence_detector.py). Fence detection is required: "
+        "if this model can't be loaded or inference fails, the run fails "
+        "entirely rather than falling back to a YOLO-only result.",
     )
     parser.add_argument(
         "--classes",
@@ -96,18 +97,19 @@ def main() -> None:
 
     try:
         pipeline_result = run_pipeline(image_path, options)
-    except ValueError as exc:
+    except (ValueError, FenceDetectionError) as exc:
         raise SystemExit(str(exc)) from exc
 
     for warning in pipeline_result.warnings:
         print(f"warning: {warning}")
 
-    if pipeline_result.fence_mask is not None:
-        mask_path = output_dir / "fence_mask.png"
-        cv2.imwrite(str(mask_path), (pipeline_result.fence_mask * 255).astype("uint8"))
-        fence_count = sum(1 for det in pipeline_result.detections if det.label == "fence")
-        print(f"fence detections   -> {fence_count}")
-        print(f"fence mask         -> {mask_path}")
+    # Fence detection is required (run_pipeline raises otherwise), so a
+    # successful result always has a mask.
+    mask_path = output_dir / "fence_mask.png"
+    cv2.imwrite(str(mask_path), (pipeline_result.fence_mask * 255).astype("uint8"))
+    fence_count = sum(1 for det in pipeline_result.detections if det.label == "fence")
+    print(f"fence detections   -> {fence_count}")
+    print(f"fence mask         -> {mask_path}")
 
     annotated_path = output_dir / f"{image_path.stem}_detected{image_path.suffix}"
     cv2.imwrite(str(annotated_path), pipeline_result.annotated_image)

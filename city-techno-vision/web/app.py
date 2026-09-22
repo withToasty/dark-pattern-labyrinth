@@ -5,12 +5,12 @@ horizon pipeline (src/pipeline.py, shared with detect.py's CLI) -> annotated
 image + JSON + YAML + fence mask, all returned for display on one page. No
 new recognition logic lives here; see src/pipeline.py.
 
-Fence detection (SegFormer) is required for a web analysis to succeed: a
-YOLO-only result is never reported back as a completed analysis. If the
-fence model can't be loaded or inference fails, /api/analyze responds with
-503 rather than silently falling back (see PipelineOptions.require_fence
-and FenceDetectionError in src/pipeline.py). This differs from detect.py's
-CLI, which still falls back to YOLO-only with a printed warning.
+Fence detection (SegFormer) is required for an analysis to succeed -- this
+is a property of src/pipeline.py's run_pipeline() itself, shared by the CLI
+and this app, not a web-only rule. If the fence model can't be loaded or
+inference fails, run_pipeline() raises FenceDetectionError instead of
+returning a YOLO-only result, and /api/analyze responds with 503 (no stack
+trace). There is no YOLO-only fallback/debug mode anywhere in the pipeline.
 
 Run locally with:
 
@@ -126,9 +126,7 @@ async def analyze(image: UploadFile = File(...)) -> JSONResponse:
     original_path.write_bytes(data)
 
     try:
-        # Fence detection is required, not an optional extra: a YOLO-only
-        # result must not be reported back as a complete analysis.
-        pipeline_result = run_pipeline(original_path, PipelineOptions(require_fence=True))
+        pipeline_result = run_pipeline(original_path, PipelineOptions())
     except ValueError as exc:
         shutil.rmtree(run_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail=str(exc))

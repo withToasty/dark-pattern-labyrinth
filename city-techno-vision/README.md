@@ -39,7 +39,7 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--model` | `yolov8n-oiv7.pt` | 使用するUltralytics YOLOモデル/重みファイル |
 | `--conf` | `0.15` | 検出の信頼度しきい値。神戸の実写検証では0.25だと車系が落ち、0.15で2台の `Land vehicle` を保持できた |
 | `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
-| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
+| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。fence検出は必須で、YOLOの結果とマージする。モデルのロードまたは推論に失敗した場合、YOLO-onlyの結果へfallbackはせず、実行はエラーで終了する |
 | `--lens-mode` | `auto` | `auto` / `ultrawide` / `standard`。`auto` はEXIFのレンズ情報を使い、`ultrawide` は汎用の超広角近似を明示的に有効化する |
 | `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
 | `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
@@ -77,11 +77,18 @@ JSON・YAMLテキスト / 各アセットの取得URL（`GET /api/runs/{run_id}/
 書き出し、古いrun（既定30分）は次のリクエスト時に簡易cleanupされる
 （DB・ログイン・履歴なし）。
 
-Web版では SegFormer による fence detection は必須。モデルのロード失敗や
-推論失敗時に YOLO-only の結果を「解析成功」として返すことはせず、
-`/api/analyze` は 503 でエラーを返す（stack traceは返さない）。
-CLI（`detect.py`）は従来通り、fence検出が使えない場合はYOLO-onlyへ
-fallbackしてwarningを表示する。
+SegFormer による fence detection は、CLI（`detect.py`）・Web（`/api/analyze`）
+共通の `src/pipeline.py` の `run_pipeline()` レベルで必須。通常の解析成功条件は
+
+- YOLO実行成功
+- SegFormer fence detection実行成功
+- Horizon estimation実行（`detected: false`も正常結果）
+
+の3つがそろうことで、YOLO-onlyの結果を「解析成功」として返すことはしない。
+SegFormerのモデルロードまたは推論に失敗した場合、CLI・Webのどちらも
+YOLO-onlyへのfallbackはせず解析全体を失敗として扱う。
+CLIは終了コード非0・エラーメッセージで終了し、`/api/analyze` は 503 で
+エラーを返す（どちらもstack traceは出さない）。YOLO-only用のdebug modeは無い。
 
 音楽生成、複数画像対応、ログイン、モデル選択UI、threshold変更UIはこのMVPには含まれない。
 

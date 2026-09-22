@@ -6,6 +6,14 @@ existing detector/fence_detector/horizon/export/visualize modules behind one
 call so both entry points run the same steps and produce the same JSON/YAML
 schema. Model weights (YOLO, SegFormer) are cached per-process so repeated
 calls don't reload them.
+
+A normal successful analysis is YOLO detection + SegFormer fence detection +
+horizon estimation, together -- not YOLO alone. Fence detection is required:
+if the SegFormer model can't be loaded or inference fails, run_pipeline()
+raises FenceDetectionError rather than returning a YOLO-only result as a
+success. This applies identically to the CLI and the web API; there is no
+YOLO-only fallback/debug mode. Horizon estimation itself never raises for a
+"soft" case -- a `detected: false` horizon is a normal, successful result.
 """
 
 from __future__ import annotations
@@ -37,17 +45,13 @@ class PipelineOptions:
     lens_mode: str = "auto"
     curve_strength: float | None = None
     enable_horizon: bool = True
-    # If true, fence detection (model load or inference) failing raises
-    # FenceDetectionError instead of falling back to YOLO-only with a
-    # warning. The CLI defaults to False (existing detect.py behavior); the
-    # web API sets this True, since a YOLO-only result must not be reported
-    # as a complete "detection + fence + horizon" analysis.
-    require_fence: bool = False
 
 
 class FenceDetectionError(RuntimeError):
-    """Fence detection was required (PipelineOptions.require_fence) but the
-    model failed to load or inference failed."""
+    """Fence detection (SegFormer) failed to load or run. Raised by
+    run_pipeline() for both the CLI and the web API -- there is no
+    YOLO-only fallback; a run that can't complete fence detection is not a
+    successful analysis."""
 
 
 @dataclass
@@ -120,7 +124,6 @@ def run_pipeline(image_path: Path, options: PipelineOptions | None = None) -> Pi
     if image is None:
         raise ValueError(f"could not read image: {image_path}")
     height, width = image.shape[:2]
-    warnings: list[str] = []
 
     is_open_vocab_model = "world" in options.model.lower()
     if options.classes:
@@ -135,28 +138,24 @@ def run_pipeline(image_path: Path, options: PipelineOptions | None = None) -> Pi
     )
     detections = detector.detect(str(image_path))
 
-    fence_mask: np.ndarray | None = None
-    if options.fence_model:
-        fence_detector, error = _MODEL_CACHE.get_fence_detector(options.fence_model)
-        if fence_detector is None:
-            if options.require_fence:
-                raise FenceDetectionError(f"fence detection model unavailable: {error}")
-            warnings.append(f"fence detection unavailable; continuing with YOLO-only results: {error}")
-        else:
-            try:
-                fence_mask = fence_detector.predict_mask(image)
-            except Exception as exc:
-                if options.require_fence:
-                    raise FenceDetectionError(f"fence detection inference failed: {exc}") from exc
-                warnings.append(f"fence detection failed; continuing with YOLO-only results: {exc}")
-                fence_mask = None
-            else:
-                fence_detections = mask_to_detections(
-                    fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
-                )
-                detections = merge_detections(detections, fence_detections)
-    elif options.require_fence:
+    # Fence detection is required (see module docstring): failures raise
+    # rather than falling back to a YOLO-only result.
+    if not options.fence_model:
         raise FenceDetectionError("fence detection is required but no fence model was configured")
+
+    fence_detector, error = _MODEL_CACHE.get_fence_detector(options.fence_model)
+    if fence_detector is None:
+        raise FenceDetectionError(f"fence detection model unavailable: {error}")
+
+    try:
+        fence_mask = fence_detector.predict_mask(image)
+    except Exception as exc:
+        raise FenceDetectionError(f"fence detection inference failed: {exc}") from exc
+
+    fence_detections = mask_to_detections(
+        fence_mask, threshold=fence_detector.confidence_threshold, min_area=fence_detector.min_area
+    )
+    detections = merge_detections(detections, fence_detections)
 
     camera = read_camera_metadata(image_path)
     effective_lens_mode = camera.lens_mode if options.lens_mode == "auto" else options.lens_mode
@@ -200,5 +199,4 @@ def run_pipeline(image_path: Path, options: PipelineOptions | None = None) -> Pi
         detections=detections,
         horizon=horizon,
         fence_mask=fence_mask,
-        warnings=warnings,
     )
