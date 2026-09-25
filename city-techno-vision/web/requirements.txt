@@ -1,0 +1,12 @@
+# Lambda container image dependencies for web/lambda_handler.py.
+# opencv-python-headless (not opencv-python): no GUI/X11 libs in the Lambda runtime.
+# CPU-only torch wheel: the GPU build is far larger and Lambda has no GPU anyway.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+ultralytics>=8.0.0
+opencv-python-headless>=4.8.0
+PyYAML>=6.0
+pillow
+torch
+torchvision
+transformers
