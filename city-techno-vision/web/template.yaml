@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  city-techno-vision detection API: POST an image, get back YOLO object
+  detections + fence segmentation + reference horizon as JSON, plus an
+  annotated JPEG. No audio/music generation belongs in this stack.
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 3008
+    EphemeralStorage:
+      Size: 2048
+  Api:
+    Cors:
+      AllowOrigin: "'*'"
+      AllowMethods: "'POST,OPTIONS'"
+      AllowHeaders: "'Content-Type'"
+
+Resources:
+  DetectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Events:
+        DetectApi:
+          Type: Api
+          Properties:
+            Path: /detect
+            Method: post
+    Metadata:
+      Dockerfile: web/Dockerfile
+      DockerContext: ..
+      DockerTag: latest
+
+Outputs:
+  ApiUrl:
+    Description: Invoke URL for POST /detect
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/detect"
