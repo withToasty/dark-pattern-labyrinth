@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>音算 — 音楽のための電卓</title>
+    <style>
+      * { box-sizing: border-box; }
+      :root {
+        --bg: #0b0d10;
+        --panel: #15181d;
+        --panel-2: #20252c;
+        --line: #343b45;
+        --text: #f5f7fa;
+        --muted: #99a3af;
+        --accent: #ffd44d;
+        --accent-ink: #17140a;
+        --result: #91efb7;
+        --original: #8a95a3;
+        --shifted: #ffd44d;
+      }
+      html { color-scheme: dark; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        min-height: 100%;
+      }
+      button, input, select { font: inherit; }
+      button { cursor: pointer; }
+      .shell {
+        width: min(760px, 100%);
+        margin: 0 auto;
+        padding: 18px 16px 42px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .home {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: .04em;
+      }
+      .home:hover { color: var(--text); }
+      .version { color: #68717d; font-size: 11px; }
+      h1 {
+        margin: 0;
+        font-size: clamp(46px, 11vw, 76px);
+        letter-spacing: -.06em;
+        line-height: .95;
+      }
+      .tagline {
+        margin: 10px 0 26px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .mode-bar {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 0 0 10px;
+        scrollbar-width: none;
+      }
+      .mode-bar::-webkit-scrollbar { display: none; }
+      .mode {
+        flex: 0 0 auto;
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0 15px;
+        background: transparent;
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .06em;
+      }
+      .mode[aria-selected="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      .calculator {
+        margin-top: 8px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        overflow: hidden;
+      }
+      .display {
+        padding: 22px 20px 20px;
+        min-height: 150px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .display-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .15em;
+      }
+      .expression {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 15px;
+        min-height: 22px;
+      }
+      .answer {
+        margin-top: 4px;
+        color: var(--result);
+        font-size: clamp(38px, 10vw, 64px);
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: -.04em;
+        overflow-wrap: anywhere;
+      }
+      .detail {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .panel { padding: 18px; }
+      .panel[hidden] { display: none; }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      label {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .05em;
+      }
+      input, select {
+        width: 100%;
+        margin-top: 7px;
+        padding: 13px 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #0f1216;
+        color: var(--text);
+        font-size: 18px;
+        outline: none;
+      }
+      input:focus, select:focus { border-color: var(--accent); }
+      .stepper {
+        display: grid;
+        grid-template-columns: 1fr minmax(96px, auto) 1fr;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .stepper button {
+        min-height: 52px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel-2);
+        color: var(--text);
+        font-size: 27px;
+        font-weight: 500;
+      }
+      .shift {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 950;
+      }
+      .note-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .note-button {
+        min-height: 45px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #101318;
+        color: var(--text);
+        font-weight: 800;
+      }
+      .note-button.is-on {
+        background: var(--accent);
+        color: var(--accent-ink);
+        border-color: var(--accent);
+      }
+      .keyboard-wrap {
+        margin-top: 18px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      .keyboard {
+        position: relative;
+        width: 560px;
+        height: 150px;
+        display: flex;
+        user-select: none;
+      }
+      .white {
+        position: relative;
+        width: 40px;
+        height: 150px;
+        border: 1px solid #5d6470;
+        border-right: 0;
+        background: #f3f3ee;
+      }
+      .white:last-child { border-right: 1px solid #5d6470; }
+      .black {
+        position: absolute;
+        z-index: 3;
+        width: 25px;
+        height: 92px;
+        top: 0;
+        background: #17191d;
+        border: 1px solid #050607;
+        border-radius: 0 0 5px 5px;
+      }
+      .key-mark {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 8px;
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        opacity: 0;
+      }
+      .black .key-mark { bottom: 7px; }
+      .key-mark.original { background: var(--original); opacity: .82; }
+      .key-mark.shifted { background: var(--shifted); opacity: 1; }
+      .key-mark.both {
+        background: linear-gradient(90deg, var(--original) 0 50%, var(--shifted) 50% 100%);
+        opacity: 1;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 11px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .legend span::before {
+        content: "";
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+      .legend .l-original::before { background: var(--original); }
+      .legend .l-shifted::before { background: var(--shifted); }
+      .principle {
+        margin: 20px 3px 0;
+        color: #717b87;
+        font-size: 11px;
+        line-height: 1.7;
+      }
+      @media (max-width: 520px) {
+        .shell { padding-inline: 12px; }
+        .grid-2 { grid-template-columns: 1fr; }
+        .display { min-height: 135px; }
+        .note-grid { grid-template-columns: repeat(4, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <div class="top">
+        <a class="home" href="../#wt-home">← WITH TOAST</a>
+        <span class="version">ONSAN 0.1</span>
+      </div>
+
+      <h1>音算</h1>
+      <p class="tagline">音楽のための電卓。</p>
+
+      <div class="mode-bar" role="tablist" aria-label="計算モード">
+        <button class="mode" type="button" role="tab" aria-selected="true" data-mode="bpm">BPM</button>
+        <button class="mode" type="button" role="tab" aria-selected="false" data-mode="key">KEY</button>
+        <button class="mode" type="button" role="tab" aria-selected="false" data-mode="capo">CAPO</button>
+        <button class="mode" type="button" role="tab" aria-selected="false" data-mode="range">RANGE</button>
+        <button class="mode" type="button" role="tab" aria-selected="false" data-mode="chord">CHORD</button>
+        <button class="mode" type="button" role="tab" aria-selected="false" data-mode="keys">KEYS</button>
+      </div>
+
+      <section class="calculator">
+        <div class="display" aria-live="polite">
+          <div class="display-label" id="display-label">BPM</div>
+          <div class="expression" id="expression">82 → 93 BPM</div>
+          <div class="answer" id="answer">+13.4%</div>
+          <div class="detail" id="detail">約 1.134 倍</div>
+        </div>
+
+        <div class="panel" id="panel-bpm">
+          <div class="grid-2">
+            <label>元BPM
+              <input id="bpm-from" type="number" value="82" min="1" max="400" inputmode="decimal" />
+            </label>
+            <label>変更後
+              <input id="bpm-to" type="number" value="93" min="1" max="400" inputmode="decimal" />
+            </label>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-key" hidden>
+          <div class="grid-2">
+            <label>FROM
+              <select id="key-from"></select>
+            </label>
+            <label>TO
+              <select id="key-to"></select>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-capo" hidden>
+          <div class="grid-2">
+            <label>コード
+              <input id="capo-chord" value="C" autocomplete="off" />
+            </label>
+            <label>カポ
+              <input id="capo-fret" type="number" value="3" min="0" max="12" inputmode="numeric" />
+            </label>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-range" hidden>
+          <div class="grid-2">
+            <label>現在の最高音
+              <select id="range-from"></select>
+            </label>
+            <label>目標最高音
+              <select id="range-to"></select>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-chord" hidden>
+          <label>コード
+            <input id="chord-name" value="C/E" autocomplete="off" />
+          </label>
+          <div class="stepper">
+            <button type="button" id="chord-minus" aria-label="半音下げる">−</button>
+            <div class="shift" id="chord-shift">−3</div>
+            <button type="button" id="chord-plus" aria-label="半音上げる">＋</button>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-keys" hidden>
+          <div class="display-label">元の音を選ぶ</div>
+          <div class="note-grid" id="note-grid"></div>
+          <div class="stepper">
+            <button type="button" id="keys-minus" aria-label="半音下げる">−</button>
+            <div class="shift" id="keys-shift">+2</div>
+            <button type="button" id="keys-plus" aria-label="半音上げる">＋</button>
+          </div>
+          <div class="keyboard-wrap" aria-label="転調前後の鍵盤">
+            <div class="keyboard" id="keyboard"></div>
+          </div>
+          <div class="legend">
+            <span class="l-original">元の音</span>
+            <span class="l-shifted">転調後</span>
+          </div>
+        </div>
+      </section>
+
+      <p class="principle">入力 → 変換 → 答え。保存もログインもいらない、その場の小さな計算だけ。</p>
+    </main>
+
+    <script>
+      (function () {
+        var NOTES = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+        var ALIASES = {'Db':'C#','D#':'Eb','Gb':'F#','G#':'Ab','A#':'Bb'};
+        var mode = 'bpm';
+        var chordShift = -3;
+        var keysShift = 2;
+        var selected = ['C','E','G'];
+
+        var displayLabel = document.getElementById('display-label');
+        var expression = document.getElementById('expression');
+        var answer = document.getElementById('answer');
+        var detail = document.getElementById('detail');
+
+        function normalize(note) {
+          return ALIASES[note] || note;
+        }
+
+        function noteIndex(note) {
+          return NOTES.indexOf(normalize(note));
+        }
+
+        function transposeNote(note, shift) {
+          var i = noteIndex(note);
+          if (i < 0) return note;
+          var n = (i + shift) % 12;
+          if (n < 0) n += 12;
+          return NOTES[n];
+        }
+
+        function parseChord(text) {
+          var value = String(text || '').trim();
+          if (!value) return null;
+          var rootLength = 1;
+          if (value.length > 1 && (value.charAt(1) === '#' || value.charAt(1) === 'b')) rootLength = 2;
+          var root = value.slice(0, rootLength);
+          if (noteIndex(root) < 0) return null;
+          return { root: root, rest: value.slice(rootLength) };
+        }
+
+        function transposeChord(text, shift) {
+          var parsed = parseChord(text);
+          if (!parsed) return '—';
+          var rest = parsed.rest;
+          var slash = rest.indexOf('/');
+          if (slash >= 0) {
+            var bass = rest.slice(slash + 1);
+            rest = rest.slice(0, slash + 1) + transposeNote(bass, shift);
+          }
+          return transposeNote(parsed.root, shift) + rest;
+        }
+
+        function sign(n) {
+          return n > 0 ? '+' + n : String(n);
+        }
+
+        function setOutput(label, expr, value, sub) {
+          displayLabel.textContent = label;
+          expression.textContent = expr;
+          answer.textContent = value;
+          detail.textContent = sub;
+        }
+
+        function fillSelect(id) {
+          var select = document.getElementById(id);
+          NOTES.forEach(function (note) {
+            var option = document.createElement('option');
+            option.value = note;
+            option.textContent = note;
+            select.appendChild(option);
+          });
+        }
+
+        ['key-from','key-to','range-from','range-to'].forEach(fillSelect);
+        document.getElementById('key-from').value = 'A';
+        document.getElementById('key-to').value = 'Eb';
+        document.getElementById('range-from').value = 'E';
+        document.getElementById('range-to').value = 'C#';
+
+        function buildNoteButtons() {
+          var grid = document.getElementById('note-grid');
+          NOTES.forEach(function (note) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'note-button';
+            button.textContent = note;
+            button.dataset.note = note;
+            button.addEventListener('click', function () {
+              var at = selected.indexOf(note);
+              if (at >= 0) selected.splice(at, 1);
+              else selected.push(note);
+              update();
+            });
+            grid.appendChild(button);
+          });
+        }
+
+        function buildKeyboard() {
+          var keyboard = document.getElementById('keyboard');
+          var whites = ['C','D','E','F','G','A','B','C','D','E','F','G','A','B'];
+          whites.forEach(function (note, i) {
+            var key = document.createElement('div');
+            key.className = 'white';
+            key.dataset.note = note;
+            key.dataset.pitch = String((i < 7 ? 0 : 12) + noteIndex(note));
+            var mark = document.createElement('span');
+            mark.className = 'key-mark';
+            key.appendChild(mark);
+            keyboard.appendChild(key);
+          });
+
+          var blackOffsets = [
+            [28,'C#',1],[68,'Eb',3],[148,'F#',6],[188,'Ab',8],[228,'Bb',10],
+            [308,'C#',13],[348,'Eb',15],[428,'F#',18],[468,'Ab',20],[508,'Bb',22]
+          ];
+          blackOffsets.forEach(function (item) {
+            var key = document.createElement('div');
+            key.className = 'black';
+            key.style.left = item[0] + 'px';
+            key.dataset.note = item[1];
+            key.dataset.pitch = String(item[2]);
+            var mark = document.createElement('span');
+            mark.className = 'key-mark';
+            key.appendChild(mark);
+            keyboard.appendChild(key);
+          });
+        }
+
+        function paintKeys() {
+          document.querySelectorAll('.note-button').forEach(function (button) {
+            button.classList.toggle('is-on', selected.indexOf(button.dataset.note) >= 0);
+          });
+
+          var originalPitchClasses = selected.map(function (note) { return noteIndex(note); });
+          var shiftedPitchClasses = selected.map(function (note) {
+            var i = noteIndex(note);
+            var n = (i + keysShift) % 12;
+            if (n < 0) n += 12;
+            return n;
+          });
+
+          document.querySelectorAll('#keyboard > div').forEach(function (key) {
+            var pitchClass = Number(key.dataset.pitch) % 12;
+            var mark = key.querySelector('.key-mark');
+            var isOriginal = originalPitchClasses.indexOf(pitchClass) >= 0;
+            var isShifted = shiftedPitchClasses.indexOf(pitchClass) >= 0;
+            mark.className = 'key-mark' + (isOriginal && isShifted ? ' both' : isShifted ? ' shifted' : isOriginal ? ' original' : '');
+          });
+        }
+
+        function update() {
+          if (mode === 'bpm') {
+            var fromBpm = Math.max(1, Math.min(400, Number(document.getElementById('bpm-from').value) || 1));
+            var toBpm = Math.max(1, Math.min(400, Number(document.getElementById('bpm-to').value) || 1));
+            var ratio = toBpm / fromBpm;
+            var pct = (ratio - 1) * 100;
+            setOutput('BPM', fromBpm + ' → ' + toBpm + ' BPM', (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%', '約 ' + ratio.toFixed(3) + ' 倍');
+          }
+
+          if (mode === 'key') {
+            var fromKey = document.getElementById('key-from').value;
+            var toKey = document.getElementById('key-to').value;
+            var up = noteIndex(toKey) - noteIndex(fromKey);
+            if (up < 0) up += 12;
+            var down = up === 0 ? 0 : up - 12;
+            setOutput('KEY', fromKey + ' → ' + toKey, up === 0 ? '0' : '+' + up, up === 0 ? '同じキー' : down + ' 半音でも到達');
+          }
+
+          if (mode === 'capo') {
+            var capoChord = document.getElementById('capo-chord').value;
+            var fret = Math.max(0, Math.min(12, Number(document.getElementById('capo-fret').value) || 0));
+            setOutput('CAPO', capoChord + ' / capo ' + fret, transposeChord(capoChord, fret), '+' + fret + ' 半音');
+          }
+
+          if (mode === 'range') {
+            var rangeFrom = document.getElementById('range-from').value;
+            var rangeTo = document.getElementById('range-to').value;
+            var diff = noteIndex(rangeTo) - noteIndex(rangeFrom);
+            while (diff > 6) diff -= 12;
+            while (diff < -6) diff += 12;
+            setOutput('RANGE', '最高音 ' + rangeFrom + ' → ' + rangeTo, sign(diff), diff < 0 ? Math.abs(diff) + ' 半音下げる' : diff > 0 ? diff + ' 半音上げる' : '変更なし');
+          }
+
+          if (mode === 'chord') {
+            var chord = document.getElementById('chord-name').value;
+            document.getElementById('chord-shift').textContent = sign(chordShift);
+            setOutput('CHORD', chord + ' ' + sign(chordShift), transposeChord(chord, chordShift), Math.abs(chordShift) + ' 半音 ' + (chordShift < 0 ? 'down' : chordShift > 0 ? 'up' : 'same'));
+          }
+
+          if (mode === 'keys') {
+            paintKeys();
+            document.getElementById('keys-shift').textContent = sign(keysShift);
+            var after = selected.map(function (note) { return transposeNote(note, keysShift); });
+            setOutput('KEYS', selected.length ? selected.join(' · ') + '  ' + sign(keysShift) : '音を選択', after.length ? after.join(' · ') : '—', '灰色 = 元 / 黄色 = 転調後');
+          }
+        }
+
+        document.querySelectorAll('.mode').forEach(function (button) {
+          button.addEventListener('click', function () {
+            mode = button.dataset.mode;
+            document.querySelectorAll('.mode').forEach(function (b) {
+              b.setAttribute('aria-selected', String(b === button));
+            });
+            document.querySelectorAll('.panel').forEach(function (panel) {
+              panel.hidden = panel.id !== 'panel-' + mode;
+            });
+            update();
+          });
+        });
+
+        document.querySelectorAll('input, select').forEach(function (control) {
+          control.addEventListener('input', update);
+          control.addEventListener('change', update);
+        });
+
+        document.getElementById('chord-minus').addEventListener('click', function () {
+          chordShift = Math.max(-12, chordShift - 1);
+          update();
+        });
+        document.getElementById('chord-plus').addEventListener('click', function () {
+          chordShift = Math.min(12, chordShift + 1);
+          update();
+        });
+        document.getElementById('keys-minus').addEventListener('click', function () {
+          keysShift = Math.max(-12, keysShift - 1);
+          update();
+        });
+        document.getElementById('keys-plus').addEventListener('click', function () {
+          keysShift = Math.min(12, keysShift + 1);
+          update();
+        });
+
+        buildNoteButtons();
+        buildKeyboard();
+        update();
+      }());
+    </script>
+  </body>
+</html>
