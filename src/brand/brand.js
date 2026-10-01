@@ -18,6 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
       playable: true,
     },
     {
+      id: 'onsan',
+      title: '音算',
+      field: 'MUSIC / TOOL',
+      status: 'making',
+      desc: 'BPM、キー、カポ、音域、コード、鍵盤位置。音楽の中で頭の中だけでやっていた小さな計算を、すぐ答えに変える電卓。',
+      ingredients: ['Music Theory', 'Calculator', 'Minimal UI', 'Vanilla JS'],
+      href: 'onsan/',
+      playable: true,
+    },
+    {
       id: 'grid-rogue',
       title: 'Grid Rogue',
       field: 'PLAY',
