@@ -44,6 +44,15 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
 | `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
 
+## アップロードして試すページ
+
+```
+python app.py
+```
+
+`http://127.0.0.1:5000` を開き、画像をアップロードすると、枠線付き画像・検出一覧（信頼度つき）・ホライゾン・JSONが表示される。
+内部では `detect.py` をそのまま実行しているので、CLIと同じ結果になる。ローカル専用（サイトには載らない）。
+
 ## モデルについて（Open Images V7 vs COCO）
 
 デフォルトの`yolov8n-oiv7.pt`はOpen Images V7で学習済み・601クラス。
