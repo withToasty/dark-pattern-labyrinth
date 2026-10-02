@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>city-techno-vision</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  #api-url { width: 100%; box-sizing: border-box; padding: 0.4rem; margin-bottom: 0.75rem; }
+  label { display: block; font-size: 0.85rem; color: #444; margin-bottom: 0.25rem; }
+  #result-image { max-width: 100%; margin-top: 1rem; border: 1px solid #ccc; }
+  pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; white-space: pre-wrap; }
+  #status { color: #666; margin-top: 0.5rem; }
+  fieldset { margin-bottom: 0.75rem; }
+</style>
+</head>
+<body>
+<h1>city-techno-vision</h1>
+
+<label for="api-url">API endpoint (POST /detect)</label>
+<input id="api-url" type="text" placeholder="https://xxxx.execute-api.ap-northeast-1.amazonaws.com/Prod/detect" />
+
+<fieldset>
+  <label><input type="checkbox" id="enable-fence" checked /> fence detection</label>
+  <label><input type="checkbox" id="enable-horizon" checked /> horizon estimation</label>
+</fieldset>
+
+<input id="file-input" type="file" accept="image/*" />
+<button id="run">detect</button>
+<div id="status"></div>
+
+<img id="result-image" style="display:none" />
+<pre id="result-json" style="display:none"></pre>
+
+<script>
+const apiUrlInput = document.getElementById('api-url');
+const stored = localStorage.getItem('city-techno-vision-api-url');
+if (stored) apiUrlInput.value = stored;
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('run').addEventListener('click', async () => {
+  const apiUrl = apiUrlInput.value.trim();
+  const fileInput = document.getElementById('file-input');
+  const statusEl = document.getElementById('status');
+  const imageEl = document.getElementById('result-image');
+  const jsonEl = document.getElementById('result-json');
+
+  if (!apiUrl) { statusEl.textContent = 'API endpointを入力してください'; return; }
+  if (!fileInput.files.length) { statusEl.textContent = '画像を選択してください'; return; }
+
+  localStorage.setItem('city-techno-vision-api-url', apiUrl);
+
+  statusEl.textContent = '検出中...';
+  imageEl.style.display = 'none';
+  jsonEl.style.display = 'none';
+
+  try {
+    const imageBase64 = await fileToBase64(fileInput.files[0]);
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_base64: imageBase64,
+        filename: fileInput.files[0].name,
+        enable_fence: document.getElementById('enable-fence').checked,
+        enable_horizon: document.getElementById('enable-horizon').checked,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      statusEl.textContent = `エラー: ${data.error || response.status}`;
+      return;
+    }
+    statusEl.textContent = `検出完了 (${data.result.detections.length}件)`;
+    if (data.annotated_image_base64) {
+      imageEl.src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
+      imageEl.style.display = 'block';
+    }
+    jsonEl.textContent = JSON.stringify(data.result, null, 2);
+    jsonEl.style.display = 'block';
+  } catch (err) {
+    statusEl.textContent = `エラー: ${err}`;
+  }
+});
+</script>
+</body>
+</html>

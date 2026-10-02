@@ -295,7 +295,13 @@ city-techno-vision/
     test_fence_detector.py
     test_horizon.py
   requirements.txt
+  web/               AWS Lambda + API Gatewayでこのパイプラインをホストする(web/README.md参照)
 ```
+
+## Web (AWS Lambda)
+
+このパイプラインをHTTP API化してブラウザから使えるようにする構成が
+`web/`にある。デプロイ手順・構成は `web/README.md` を参照。
 
 ## 既知の制約
 
