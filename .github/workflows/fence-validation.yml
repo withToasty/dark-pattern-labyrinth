@@ -1,15 +1,11 @@
-name: city-techno-vision fence validation
+name: city-techno-vision detection validation
 
-# Runs the real multi-model city-detection path end-to-end. The push trigger is
-# temporary for the experiment branch so we can validate model downloads and inference.
+# Manual end-to-end validation for the multi-model city-detection path.
 on:
-  push:
-    branches:
-      - experiment/city-detection-low-threshold
   workflow_dispatch:
     inputs:
       image_url:
-        description: "URL of a street-scene photo containing a fence (optional)"
+        description: "URL of a street-scene photo (optional; defaults to Ultralytics bus.jpg)"
         required: false
         default: ""
       image_path:
@@ -18,7 +14,7 @@ on:
         default: ""
 
 jobs:
-  validate-fence-detection:
+  validate-city-detection:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -34,7 +30,7 @@ jobs:
           pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
           pip install -r requirements.txt
 
-      - name: Download SegFormer fence model
+      - name: Download SegFormer scene model
         run: |
           python - <<'EOF'
           from transformers import SegformerImageProcessor, SegformerForSemanticSegmentation
@@ -61,7 +57,7 @@ jobs:
           fi
           echo "blocked=false" >> "$GITHUB_OUTPUT"
 
-      - name: Run detect.py (general detector + fence)
+      - name: Run detect.py (Open Images + YOLO-World + SegFormer)
         if: steps.image.outputs.blocked == 'false'
         working-directory: city-techno-vision
         run: |
@@ -99,5 +95,5 @@ jobs:
         if: steps.image.outputs.blocked == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: fence-validation-output
+          name: city-detection-validation-output
           path: /tmp/fence-output/
