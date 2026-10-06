@@ -1,11 +1,11 @@
 ultralytics>=8.0.0
 opencv-python>=4.8.0
 PyYAML>=6.0
-# needed only for open-vocabulary detection (YOLO-World models' set_classes()),
+# used by the default supplemental open-vocabulary YOLO-World pass,
 # see README "open-vocabulary detection"
 clip @ git+https://github.com/openai/CLIP.git
-# needed only for fence detection (--fence-model / FenceDetector), see
-# README "fence detection" and src/fence_detector.py
+# used by Cityscapes semantic segmentation (--fence-model kept for compatibility),
+# see README and src/fence_detector.py
 torch
 torchvision
 transformers

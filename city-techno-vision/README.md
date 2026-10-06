@@ -7,7 +7,7 @@ City Techno プロジェクトの「画像認識」部分のみを実装した�
 ```
 画像
  ↓
-物体検出 + 音楽用リファレンス・ホライゾン推定
+Open Images YOLO + YOLO-World + Cityscapes SegFormer + 音楽用リファレンス・ホライゾン推定
  ↓
 枠線・ホライゾン付き画像 ＋ JSON / YAML
 ```
@@ -21,8 +21,7 @@ City Techno プロジェクトの「画像認識」部分のみを実装した�
 pip install -r requirements.txt
 ```
 
-初回実行時に、モデルの重み（デフォルトは`yolov8n-oiv7.pt`、Open Images V7データセットで
-学習済み・601クラス）が自動でダウンロードされる。
+初回実行時に、主検出器 `yolov8n-oiv7.pt`（Open Images V7・601クラス）、補助の `yolov8s-worldv2.pt`（open vocabulary）、および Cityscapes SegFormer の重みが必要に応じて自動ダウンロードされる。
 
 ## 使い方
 
@@ -37,9 +36,13 @@ python detect.py --image path/to/photo.jpg --output-dir output/
 | `--image` | (必須) | 入力画像のパス |
 | `--output-dir` | `output/` | 出力先ディレクトリ |
 | `--model` | `yolov8n-oiv7.pt` | 使用するUltralytics YOLOモデル/重みファイル |
-| `--conf` | `0.15` | 検出の信頼度しきい値。神戸の実写検証では0.25だと車系が落ち、0.15で2台の `Land vehicle` を保持できた |
-| `--classes` | (なし) | 検出したい対象をカンマ区切りで指定。open-vocabularyモデル（`--model`に`world`を含むもの）でのみ有効 |
-| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | fence用セマンティックセグメンテーションモデル。通常実行でも自動で fence 領域を検出し、YOLOの結果とマージする |
+| `--conf` | `0.05` | Open Images YOLOの信頼度しきい値。音素材の取りこぼしを減らすため低めに設定 |
+| `--world-model` | `yolov8s-worldv2.pt` | 補助のopen-vocabulary検出器。空文字で無効化 |
+| `--world-conf` | `0.05` | YOLO-Worldの信頼度しきい値 |
+| `--classes` | 街向け語彙 | YOLO-Worldで探す対象をカンマ区切りで指定。省略時は車両・道路・高架・ガードレール・建物・看板・自然物などの広い語彙を使う |
+| `--fence-model` | `nvidia/segformer-b0-finetuned-cityscapes-1024-1024` | 互換性のため名称は維持。現在はfenceだけでなく road / sidewalk / building / wall / pole / vegetation / terrain / sky も抽出する |
+| `--seg-conf` | `0.35` | SegFormerのクラス確率しきい値 |
+| `--seg-classes` | 9クラス | SegFormerでbbox化するCityscapesクラスを指定 |
 | `--lens-mode` | `auto` | `auto` / `ultrawide` / `standard`。`auto` はEXIFのレンズ情報を使い、`ultrawide` は汎用の超広角近似を明示的に有効化する |
 | `--curve-strength` | (なし) | 曲線近似の強さを手動指定。常に approximation として出力し、実測キャリブレーションとは扱わない |
 | `--no-horizon` | off | 幾何学的な地平線推定を無効化する |
@@ -58,16 +61,15 @@ street light, traffic signなど）が追加で検出できる。
 - 8クラスはOpen Images V7に存在しない（donut, frisbee, potted plant, skis,
   sports ball, cup, cow(→`Cattle`という別名で存在), cell phone）
 
-### fence の検出
+### Cityscapes セマンティックセグメンテーション
 
-`fence` は通常の物体検出だけでは安定しないため、
-`src/fence_detector.py` の `FenceDetector` でセマンティックセグメンテーションを使う。
+`fence` のような細長い構造物だけでなく、道路・歩道・建物・空など「面として存在する景色」を通常の物体検出だけに任せないため、`src/fence_detector.py` の `CityscapesDetector` でセマンティックセグメンテーションを使う。従来コードとの互換性のため `FenceDetector` 名も残している。
 
 採用モデル:
 
 `nvidia/segformer-b0-finetuned-cityscapes-1024-1024`
 
-Cityscapes 19-class taxonomy の `fence` (class id 4) の確率マスクを取得し、
+Cityscapes 19-class taxonomy から、デフォルトでは `road / sidewalk / building / wall / fence / pole / vegetation / terrain / sky` の確率マスクを1回の推論で取得し、各クラスごとに
 
 ```text
 fence probability mask
@@ -162,19 +164,20 @@ image
 
 ## 検出対象を増やす（open-vocabulary detection）
 
-さらに独自の単語を検出したい場合は、YOLO-World を使う。
+通常実行でも Open Images V7 の固定601クラスに加えて YOLO-World を補助的に実行する。
+`--classes` を省略すると `src/detector.py` の `DEFAULT_CITY_CLASSES` を使い、
+car / bus / motorcycle / person に加えて road / curb / guardrail / railing /
+bridge / overpass / traffic light / utility pole / building / window / billboard /
+tree / sky など、街から音素材を拾うための広い語彙を検索する。
+
+独自語彙に絞る場合:
 
 ```
-python detect.py --image photo.jpg --model yolov8s-worldv2.pt
+python detect.py --image photo.jpg \
+  --classes "overpass,guardrail,traffic light,car,bus,puddle"
 ```
 
-`--classes`を省略すると、`src/detector.py`の`DEFAULT_CITY_CLASSES`
-（街の風景向け単語リスト）が使われる。
-
-```
-python detect.py --image photo.jpg --model yolov8s-worldv2.pt \
-  --classes "building,car,tree"
-```
+YOLO-Worldを使わずOpen Images側だけ試したい場合は `--world-model ""` とする。
 
 ## 出力
 
@@ -221,6 +224,7 @@ Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として
       "label": "Land vehicle",
       "group": "road_vehicle",
       "confidence": 0.19,
+      "source": "yolo_oiv7",
       "minx": 210,
       "maxx": 540,
       "miny": 620,
@@ -304,11 +308,7 @@ city-techno-vision/
 将来、iPhone専用カメラで撮影時の姿勢センサー値を保存できれば、
 そちらを優先し、この画像推定をfallbackにする想定。
 
-`--classes`（YOLO-World）は、開発時のサンドボックスではCLIPの初回取得先が
-ネットワークポリシーでブロックされ、実検出までは未確認。
-
-fence用SegFormerはClaude sandboxではHugging Faceへの接続がブロックされたが、
-GitHub Actions上で実モデル + 実写真の推論を確認済み。
+YOLO-World と SegFormer は初回に追加モデルを取得するため、ネットワーク制限のある実行環境では補助パスが利用できないことがある。Open Images YOLOの結果は独立して保持し、補助モデルが利用できる環境では結果を同じ detection list に追加する。SegFormerの実モデル + 実写真推論はGitHub Actions上で確認済み。
 
 ## スコープ外
 

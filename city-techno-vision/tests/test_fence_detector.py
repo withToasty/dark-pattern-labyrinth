@@ -8,7 +8,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.detector import Detection, merge_detections
-from src.fence_detector import CITYSCAPES_FENCE_CLASS_ID, FenceDetector, mask_to_detections
+from src.fence_detector import CITYSCAPES_FENCE_CLASS_ID, CityscapesDetector, FenceDetector, mask_to_detections
 
 
 def _synthetic_fence_mask() -> np.ndarray:
@@ -80,3 +80,43 @@ def test_predict_mask_upsamples_and_selects_fence_class():
     assert mask.dtype == np.float32
     assert mask[2, 2] > 0.8
     assert mask[height - 1, width - 1] < 0.2
+
+
+def test_predict_masks_selects_multiple_cityscapes_classes():
+    torch = __import__("torch")
+
+    height, width = 40, 60
+    reduced_h, reduced_w = 4, 6
+    num_labels = 19
+
+    logits = torch.zeros(1, num_labels, reduced_h, reduced_w)
+    logits[0, CITYSCAPES_FENCE_CLASS_ID, 0:2, 0:3] = 10.0
+    logits[0, 0, 2:4, :] = 8.0
+
+    class FakeOutput:
+        def __init__(self, logits):
+            self.logits = logits
+
+    class FakeModel:
+        def __call__(self, **inputs):
+            return FakeOutput(logits)
+
+    class FakeProcessor:
+        def __call__(self, images, return_tensors):
+            return {"pixel_values": torch.zeros(1, 3, reduced_h, reduced_w)}
+
+    detector = CityscapesDetector.__new__(CityscapesDetector)
+    detector.model = FakeModel()
+    detector.processor = FakeProcessor()
+    detector.class_names = ("fence", "road")
+    detector.fence_class_id = CITYSCAPES_FENCE_CLASS_ID
+
+    image = np.zeros((height, width, 3), dtype=np.uint8)
+    masks = detector.predict_masks(image)
+
+    assert set(masks) == {"fence", "road"}
+    assert masks["fence"].shape == (height, width)
+    assert masks["road"].shape == (height, width)
+    assert masks["fence"][2, 2] > 0.8
+    assert masks["road"][height - 2, width // 2] > 0.8
+    assert FenceDetector is CityscapesDetector

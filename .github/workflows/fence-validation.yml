@@ -1,13 +1,11 @@
-name: city-techno-vision fence validation
+name: city-techno-vision detection validation
 
-# Manual-only: runs the real SegFormer fence-detection path end-to-end on a
-# GitHub Actions runner, where huggingface.co is reachable (unlike the Claude
-# sandbox, which blocks it -- see city-techno-vision/STATUS.md).
+# Manual end-to-end validation for the multi-model city-detection path.
 on:
   workflow_dispatch:
     inputs:
       image_url:
-        description: "URL of a street-scene photo containing a fence (optional)"
+        description: "URL of a street-scene photo (optional; defaults to Ultralytics bus.jpg)"
         required: false
         default: ""
       image_path:
@@ -16,7 +14,7 @@ on:
         default: ""
 
 jobs:
-  validate-fence-detection:
+  validate-city-detection:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -32,7 +30,7 @@ jobs:
           pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
           pip install -r requirements.txt
 
-      - name: Download SegFormer fence model
+      - name: Download SegFormer scene model
         run: |
           python - <<'EOF'
           from transformers import SegformerImageProcessor, SegformerForSemanticSegmentation
@@ -54,13 +52,12 @@ jobs:
           elif [ -n "$IMAGE_URL" ]; then
             curl -sSL "$IMAGE_URL" -o /tmp/fence-input/photo.jpg
           else
-            echo "::warning::Blocked: no test image provided. Re-run with image_url or image_path set to a street-scene photo containing a fence."
-            echo "blocked=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            curl -sSL "https://ultralytics.com/images/bus.jpg" -o /tmp/fence-input/photo.jpg
+            echo "using public Ultralytics bus.jpg for branch validation"
           fi
           echo "blocked=false" >> "$GITHUB_OUTPUT"
 
-      - name: Run detect.py (general detector + fence)
+      - name: Run detect.py (Open Images + YOLO-World + SegFormer)
         if: steps.image.outputs.blocked == 'false'
         working-directory: city-techno-vision
         run: |
@@ -80,9 +77,13 @@ jobs:
           import json
           with open("/tmp/fence-output/detections.json") as f:
               result = json.load(f)
-          fence = [d for d in result["detections"] if d["label"] == "fence"]
+          from collections import Counter
+          detections = result["detections"]
+          fence = [d for d in detections if d["label"] == "fence"]
           print(f"fence detections: {len(fence)}")
-          print(f"total detections: {len(result['detections'])}")
+          print(f"total detections: {len(detections)}")
+          print("by source:", dict(Counter(d.get("source", "unknown") for d in detections)))
+          print("top labels:", Counter(d["label"] for d in detections).most_common(20))
           print("status: success")
           print("output dir: /tmp/fence-output")
           EOF
@@ -94,5 +95,5 @@ jobs:
         if: steps.image.outputs.blocked == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: fence-validation-output
+          name: city-detection-validation-output
           path: /tmp/fence-output/
