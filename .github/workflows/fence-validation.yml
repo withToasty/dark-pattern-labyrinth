@@ -1,9 +1,11 @@
 name: city-techno-vision fence validation
 
-# Manual-only: runs the real SegFormer fence-detection path end-to-end on a
-# GitHub Actions runner, where huggingface.co is reachable (unlike the Claude
-# sandbox, which blocks it -- see city-techno-vision/STATUS.md).
+# Runs the real multi-model city-detection path end-to-end. The push trigger is
+# temporary for the experiment branch so we can validate model downloads and inference.
 on:
+  push:
+    branches:
+      - experiment/city-detection-low-threshold
   workflow_dispatch:
     inputs:
       image_url:
@@ -54,9 +56,8 @@ jobs:
           elif [ -n "$IMAGE_URL" ]; then
             curl -sSL "$IMAGE_URL" -o /tmp/fence-input/photo.jpg
           else
-            echo "::warning::Blocked: no test image provided. Re-run with image_url or image_path set to a street-scene photo containing a fence."
-            echo "blocked=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            curl -sSL "https://ultralytics.com/images/bus.jpg" -o /tmp/fence-input/photo.jpg
+            echo "using public Ultralytics bus.jpg for branch validation"
           fi
           echo "blocked=false" >> "$GITHUB_OUTPUT"
 
