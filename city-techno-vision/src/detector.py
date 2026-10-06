@@ -1,43 +1,82 @@
-"""Object detection wrapper around an Ultralytics YOLO model.
+"""Object detection wrappers for fixed- and open-vocabulary YOLO models.
 
-Responsibility: image in, structured detections out. Nothing about
-sound, rhythm, or MIDI belongs in this module (that's a separate
-project layered on top of this one's JSON/YAML output).
-
-Two kinds of model are supported, selected by which weights you pass in:
-
-- A regular YOLO model (e.g. "yolov8n.pt") only ever detects the 80
-  everyday objects it was trained on (car, person, dog, ...). Its
-  class list is fixed at training time.
-- A YOLO-World model (e.g. "yolov8s-worldv2.pt") is open-vocabulary:
-  you hand it any list of words at runtime (`classes=[...]`) and it
-  looks for those instead.
+Responsibility: image in, structured detections out. Nothing about sound,
+rhythm, or MIDI belongs in this module.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+
+DEFAULT_CONFIDENCE_THRESHOLD = 0.05
+DEFAULT_WORLD_MODEL_ID = "yolov8s-worldv2.pt"
+
+# Broad city-scene vocabulary for the supplemental YOLO-World pass.  The goal
+# here is recall: downstream music mapping can decide which detections to use.
 DEFAULT_CITY_CLASSES = [
+    # vehicles / people
     "car",
+    "taxi",
     "truck",
     "bus",
+    "van",
     "motorcycle",
     "bicycle",
     "person",
-    "traffic light",
-    "traffic sign",
-    "building",
-    "sky",
-    "cloud",
-    "tree",
-    "fence",
+    # roads / transport infrastructure
     "road",
     "sidewalk",
-    "streetlight",
+    "curb",
+    "crosswalk",
+    "lane marking",
+    "guardrail",
+    "road barrier",
+    "railing",
     "bridge",
-    "billboard",
+    "overpass",
+    "tunnel",
+    "railway",
+    "train",
+    "stairs",
+    # street furniture / utilities
+    "traffic light",
+    "traffic sign",
+    "streetlight",
     "utility pole",
+    "power line",
+    "bollard",
+    "bench",
+    "trash can",
+    "vending machine",
+    # buildings / facade details
+    "building",
+    "apartment building",
+    "skyscraper",
+    "house",
+    "window",
+    "door",
+    "balcony",
+    "roof",
+    "awning",
+    "shutter",
+    "billboard",
+    "shop sign",
+    "air conditioner",
+    "antenna",
+    "chimney",
+    # scene / nature
+    "fence",
+    "wall",
+    "tree",
+    "bush",
+    "grass",
+    "plant",
+    "sky",
+    "cloud",
+    "mountain",
+    "water",
+    "puddle",
 ]
 
 
@@ -52,6 +91,7 @@ class Detection:
     maxx: int
     miny: int
     maxy: int
+    source: str = "yolo"
 
 
 class ObjectDetector:
@@ -60,13 +100,15 @@ class ObjectDetector:
     def __init__(
         self,
         model_path: str = "yolov8n-oiv7.pt",
-        confidence_threshold: float = 0.15,
+        confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
         classes: list[str] | None = None,
+        source: str = "yolo",
     ):
         from ultralytics import YOLO
 
         self.model = YOLO(model_path)
         self.confidence_threshold = confidence_threshold
+        self.source = source
 
         if classes:
             if not hasattr(self.model, "set_classes"):
@@ -95,6 +137,7 @@ class ObjectDetector:
                     maxx=round(x2),
                     miny=round(y1),
                     maxy=round(y2),
+                    source=self.source,
                 )
             )
         return detections
