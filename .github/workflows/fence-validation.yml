@@ -81,9 +81,13 @@ jobs:
           import json
           with open("/tmp/fence-output/detections.json") as f:
               result = json.load(f)
-          fence = [d for d in result["detections"] if d["label"] == "fence"]
+          from collections import Counter
+          detections = result["detections"]
+          fence = [d for d in detections if d["label"] == "fence"]
           print(f"fence detections: {len(fence)}")
-          print(f"total detections: {len(result['detections'])}")
+          print(f"total detections: {len(detections)}")
+          print("by source:", dict(Counter(d.get("source", "unknown") for d in detections)))
+          print("top labels:", Counter(d["label"] for d in detections).most_common(20))
           print("status: success")
           print("output dir: /tmp/fence-output")
           EOF
