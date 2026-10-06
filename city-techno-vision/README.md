@@ -164,19 +164,20 @@ image
 
 ## 検出対象を増やす（open-vocabulary detection）
 
-さらに独自の単語を検出したい場合は、YOLO-World を使う。
+通常実行でも Open Images V7 の固定601クラスに加えて YOLO-World を補助的に実行する。
+`--classes` を省略すると `src/detector.py` の `DEFAULT_CITY_CLASSES` を使い、
+car / bus / motorcycle / person に加えて road / curb / guardrail / railing /
+bridge / overpass / traffic light / utility pole / building / window / billboard /
+tree / sky など、街から音素材を拾うための広い語彙を検索する。
+
+独自語彙に絞る場合:
 
 ```
-python detect.py --image photo.jpg --model yolov8s-worldv2.pt
+python detect.py --image photo.jpg \
+  --classes "overpass,guardrail,traffic light,car,bus,puddle"
 ```
 
-`--classes`を省略すると、`src/detector.py`の`DEFAULT_CITY_CLASSES`
-（街の風景向け単語リスト）が使われる。
-
-```
-python detect.py --image photo.jpg --model yolov8s-worldv2.pt \
-  --classes "building,car,tree"
-```
+YOLO-Worldを使わずOpen Images側だけ試したい場合は `--world-model ""` とする。
 
 ## 出力
 
@@ -223,6 +224,7 @@ Open Images V7 では同じ車両が `Car` ではなく `Land vehicle` として
       "label": "Land vehicle",
       "group": "road_vehicle",
       "confidence": 0.19,
+      "source": "yolo_oiv7",
       "minx": 210,
       "maxx": 540,
       "miny": 620,
